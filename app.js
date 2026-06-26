@@ -572,6 +572,22 @@ function showVariants(market) {
     .join('');
 }
 
+function getSizeStyles(format) {
+  switch (format) {
+    case 'story':
+      return 'width:360px;height:640px;max-width:100%;aspect-ratio:9/16;border-radius:var(--radius-lg);overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:24px;box-sizing:border-box;';
+    case 'banner':
+      return 'width:728px;height:90px;max-width:100%;border-radius:var(--radius-lg);overflow:hidden;position:relative;';
+    case 'email':
+      return 'width:600px;height:200px;max-width:100%;border-radius:var(--radius-lg);overflow:hidden;position:relative;';
+    case 'video':
+      return 'width:100%;max-width:480px;aspect-ratio:16/9;display:flex;flex-direction:column;justify-content:space-between;padding:20px;box-sizing:border-box;';
+    case 'social':
+    default:
+      return 'width:1080px;height:1080px;max-width:100%;border-radius:var(--radius-lg);overflow:hidden;position:relative;';
+  }
+}
+
 function setLocale(el) {
   document.querySelectorAll('.locale-btn').forEach((b) => b.classList.remove('active'));
   el.classList.add('active');
@@ -581,7 +597,7 @@ function setLocale(el) {
 
 function updateLocalisedCopy() {
   const container = document.getElementById('localisedCopy');
-  const content = localisedContent[state.currentLocale];
+  const content = localisedContent[state.currentLocale] || localisedContent['EN'];
 
   if (!state.generatedAsset) {
     container.innerHTML = '<div class="text-sm" style="color:var(--text-tertiary);">Localised copy will appear after generation...</div>';
