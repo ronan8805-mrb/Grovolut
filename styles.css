@@ -3046,3 +3046,74 @@ input:checked + .slider:before {
     flex-direction: column;
   }
 }
+
+/* ══════════════════════════════════════════════
+   COMMAND PALETTE + AUTONOMOUS ENHANCEMENTS
+   (Added for Grovolut v2 — Enhanced by Grok)
+   ══════════════════════════════════════════════ */
+
+#commandPalette .palette-item:hover {
+  background: rgba(0, 212, 170, 0.08);
+}
+
+#commandPalette .palette-item:active {
+  background: rgba(0, 212, 170, 0.16);
+}
+
+/* Autonomous button hover polish */
+.topbar-right .btn-primary:hover {
+  box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Campaign card polish */
+#campaignsContainer .card {
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+#campaignsContainer .card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-accent);
+}
+
+/* Export button quick style */
+#exportAssetBtn {
+  font-weight: 600;
+}
+
+/* Small enhancement for live AB numbers */
+#predictedCtrA, #predictedCtrB {
+  transition: all 0.3s ease;
+}
+
+/* Better toast visibility on dark cinematic bg */
+.toast {
+  backdrop-filter: blur(12px);
+}
+
+/* Creative preview containers — ensure good on-screen rendering */
+.creative-preview {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  contain: layout style;
+}
+
+.creative-preview img {
+  display: block;
+  max-width: 100%;
+}
+
+/* Make sure text never overflows the nice ad containers */
+.creative-preview * {
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+#assetOutput {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#assetOutput .creative-preview {
+  box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.5);
+}

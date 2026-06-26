@@ -12,11 +12,40 @@
 
 <!-- Cinematic Intro Video Overlay -->
 <div id="introOverlay" class="intro-overlay">
-  <video id="introVideo" class="intro-video" autoplay muted playsinline preload="auto" disablePictureInPicture disableRemotePlayback>
+  <video id="introVideo" class="intro-video" autoplay muted playsinline preload="auto" playsinline webkit-playsinline disablePictureInPicture disableRemotePlayback>
     <source src="intro_grok.mp4" type="video/mp4">
   </video>
-  <button id="introSkipBtn" class="intro-skip-btn" aria-label="Skip intro">Skip Intro</button>
+  <button id="introSkipBtn" class="intro-skip-btn" aria-label="Skip intro" onclick="skipIntroNow()">Click or press any key to skip</button>
 </div>
+
+<!-- Ultra-reliable inline skip (in case main app.js has an error) -->
+<script>
+  window.skipIntroNow = function() {
+    const overlay = document.getElementById('introOverlay');
+    if (overlay) {
+      overlay.style.transition = 'opacity 0.6s ease';
+      overlay.style.opacity = '0';
+      setTimeout(() => { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 700);
+    }
+  };
+  // Click anywhere on intro to skip (very early binding)
+  (function() {
+    const overlay = document.getElementById('introOverlay');
+    if (overlay) {
+      overlay.addEventListener('click', function(e) {
+        const btn = document.getElementById('introSkipBtn');
+        if (e.target !== btn) {
+          window.skipIntroNow();
+        }
+      }, { once: true });
+    }
+    // Hard escape hatch after 8s no matter what
+    setTimeout(function() {
+      const o = document.getElementById('introOverlay');
+      if (o) window.skipIntroNow();
+    }, 8000);
+  })();
+</script>
 
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
@@ -44,13 +73,27 @@
     </div>
 
     <div class="topbar-right">
+      <button onclick="runAutonomousPipeline()" class="btn btn-primary" style="padding: 8px 18px; font-size: 0.78rem; font-weight:700; letter-spacing:0.02em; display:flex; align-items:center; gap:6px; border-color: var(--accent-teal);">
+        <span>🚀</span> <span>Autonomous Run</span>
+      </button>
       <div class="provider-bar" id="providerBar">
-        <label for="aiProvider">⚡ Provider</label>
-        <select class="provider-select" id="aiProvider" aria-label="Select AI Provider">
+        <label for="modeSelect">⚡ Mode</label>
+        <select class="provider-select" id="modeSelect" aria-label="Select Mode">
           <option value="simulated">🧪 Simulated</option>
-          <option value="gemini">✦ Gemini</option>
-          <option value="groq">⚡ Groq</option>
+          <option value="genius">✦ Genius</option>
         </select>
+
+        <!-- Genius AI sub-selector (shown only in Genius mode) -->
+        <div id="geniusAIWrapper" style="display:none; align-items:center; gap:6px; margin-left:8px;">
+          <label for="geniusAISelect" style="font-size:0.62rem; color:var(--text-secondary); white-space:nowrap;">AI</label>
+          <select class="provider-select" id="geniusAISelect" style="font-size:0.78rem; padding:3px 8px;" aria-label="Genius AI">
+            <option value="grok">Grok xAI</option>
+            <option value="gemini">Gemini</option>
+            <option value="claude">Claude</option>
+            <option value="chatgpt">ChatGPT</option>
+          </select>
+        </div>
+
         <div class="api-key-field" id="apiKeyField" style="display:none;">
           <input type="password" class="api-key-input" id="apiKeyInput" placeholder="API Key...">
           <button class="btn btn-sm btn-outline" id="testConnectionBtn" onclick="testConnection()">
@@ -58,7 +101,14 @@
             <span class="btn-text">Test</span>
           </button>
         </div>
+
         <div class="badge badge-lime" id="providerBadge">🧪 Simulated Mode</div>
+
+        <!-- Small GENIUS indicator (shown when active) -->
+        <span id="geniusStatus" style="font-size:0.55rem; color:#b8f03e; font-weight:700; display:none; margin-left:6px; padding:1px 5px; border:1px solid #b8f03e; border-radius:3px;">GENIUS</span>
+
+        <!-- Explanation -->
+        <div style="font-size:0.55rem; color:#666; margin-left:4px; cursor:help;" title="Simulated = basic mock outputs. Genius = rich direct prompts + custom asset previews using chosen AI style.">ⓘ</div>
       </div>
     </div>
   </header>
@@ -67,8 +117,17 @@
     <!-- ═══════════════════ LEFT SIDEBAR ═══════════════════ -->
     <aside class="sidebar">
       <nav class="tabs-nav" id="tabsNav" aria-label="Main Navigation">
+        <!-- 0. Home -->
+        <button class="tab-btn active" data-tab="home" id="tab-home">
+          <span class="tab-icon">
+            <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </span>Home
+        </button>
         <!-- 1. Studio Academy -->
-        <button class="tab-btn active" data-tab="academy" id="tab-academy">
+        <button class="tab-btn" data-tab="academy" id="tab-academy">
           <span class="tab-icon">
             <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
@@ -143,6 +202,16 @@
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
           </span>Campaign Library
+        </button>
+        <!-- Auto Hub - all results from Autonomous Run in one place -->
+        <button class="tab-btn" data-tab="auto-hub" id="tab-auto-hub">
+          <span class="tab-icon">
+            <svg class="tab-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </span>Auto Hub
         </button>
         <!-- 9. Content Calendar -->
         <button class="tab-btn" data-tab="calendar" id="tab-calendar">
@@ -262,6 +331,7 @@
               <div class="card-subtitle">Generate multi-market creatives with AI</div>
             </div>
             <div class="badge badge-lime" id="genProviderBadge">Simulated</div>
+        <span id="assetGeniusBadge" style="display:none; margin-left:6px; font-size:0.6rem; background:#b8f03e; color:#0a1018; padding:1px 5px; border-radius:3px; font-weight:700;">GENIUS</span>
           </div>
 
           <div class="input-group">
@@ -543,8 +613,207 @@
     </div>
   </section>
 
+  <!-- ═══════════════════ HOME ═══════════════════ -->
+  <section class="tab-content active" id="content-home" aria-label="Home">
+    <div style="max-width: 980px; margin: 0 auto; padding: 20px 12px;">
+
+      <!-- Slim Live Status -->
+      <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:32px; font-size:0.75rem; opacity:0.75;">
+        <div style="display:flex; align-items:center; gap:6px; padding:4px 14px; background:rgba(255,255,255,0.04); border-radius:999px; border:1px solid rgba(255,255,255,0.08);">
+          <span style="color:#666;">NOW RUNNING</span>
+          <span id="home-mode-badge" style="font-weight:700; color:#b8f03e;">🧪 SIMULATED</span>
+          <span style="color:#444;">•</span>
+          <span id="home-ai-badge" style="font-weight:600;">—</span>
+        </div>
+      </div>
+
+      <!-- Hero -->
+      <div style="text-align:center; padding: 20px 0 44px;">
+        <div style="font-size:0.7rem; letter-spacing:3px; color:var(--accent-teal); font-weight:700; margin-bottom:8px;">GROVOLUT</div>
+        
+        <h1 style="font-size:3.1rem; font-weight:800; line-height:1.05; margin:0 0 12px; letter-spacing:-1px; background: linear-gradient(180deg, #fff 30%, #a8b1c0); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
+          Autonomous.<br>Creative.<br>Instant.
+        </h1>
+        
+        <p style="max-width:380px; margin:0 auto 28px; font-size:1.02rem; line-height:1.4; color:#8a92a3;">
+          One engine. Real prompts.<br>Production assets. Zero friction.
+        </p>
+
+        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+          <button onclick="switchTab('prompt-generator')" 
+                  style="padding:12px 28px; font-size:0.9rem; font-weight:700; background:#b8f03e; color:#0a1018; border:none; border-radius:999px; cursor:pointer; box-shadow:0 4px 14px rgba(184,240,62,0.25);">
+            ✦ OPEN GENIUS
+          </button>
+          <button onclick="runAutonomousPipeline()" 
+                  style="padding:12px 26px; font-size:0.9rem; font-weight:700; background:transparent; color:#fff; border:1px solid #333; border-radius:999px; cursor:pointer;">
+            🚀 AUTONOMOUS RUN
+          </button>
+          <button onclick="switchTab('generator')" 
+                  style="padding:12px 24px; font-size:0.9rem; font-weight:600; background:transparent; color:#a8b1c0; border:1px solid #222; border-radius:999px; cursor:pointer;">
+            PREVIEW ASSETS
+          </button>
+        </div>
+      </div>
+
+      <!-- Capabilities -->
+      <div style="margin-top:12px;">
+        <div style="text-align:center; margin-bottom:18px;">
+          <div style="font-size:0.65rem; letter-spacing:2.5px; color:#555; font-weight:600;">WHAT IT DOES</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:14px;">
+          
+          <!-- Card 1 -->
+          <div class="card" style="padding:22px 20px; border:1px solid #1f252f; transition:transform .15s ease, border-color .15s; position:relative; overflow:hidden;"
+               onmouseenter="this.style.transform='translateY(-2px)'; this.style.borderColor='#b8f03e30'" 
+               onmouseleave="this.style.transform=''; this.style.borderColor='#1f252f'">
+            <div style="font-size:1.85rem; margin-bottom:10px; opacity:0.9;">🧠</div>
+            <div style="font-size:1.05rem; font-weight:700; margin-bottom:6px; letter-spacing:-0.2px;">Genius Prompts</div>
+            <div style="font-size:0.82rem; line-height:1.35; color:#8a92a3;">
+              Ultra-detailed, production-ready prompts. Every visual element specified with zero fluff.
+            </div>
+            <div style="position:absolute; top:16px; right:16px; font-size:0.6rem; background:#b8f03e; color:#0a1018; padding:1px 6px; border-radius:3px; font-weight:700;">GENIUS</div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="card" style="padding:22px 20px; border:1px solid #1f252f; transition:transform .15s ease, border-color .15s; position:relative; overflow:hidden;"
+               onmouseenter="this.style.transform='translateY(-2px)'; this.style.borderColor='#b8f03e30'" 
+               onmouseleave="this.style.transform=''; this.style.borderColor='#1f252f'">
+            <div style="font-size:1.85rem; margin-bottom:10px; opacity:0.9;">🎥</div>
+            <div style="font-size:1.05rem; font-weight:700; margin-bottom:6px; letter-spacing:-0.2px;">Cinematic Previews</div>
+            <div style="font-size:0.82rem; line-height:1.35; color:#8a92a3;">
+              See premium, on-brand assets instantly across every format. Text, layout and mood update live from your brief.
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="card" style="padding:22px 20px; border:1px solid #1f252f; transition:transform .15s ease, border-color .15s; position:relative; overflow:hidden;"
+               onmouseenter="this.style.transform='translateY(-2px)'; this.style.borderColor='#b8f03e30'" 
+               onmouseleave="this.style.transform=''; this.style.borderColor='#1f252f'">
+            <div style="font-size:1.85rem; margin-bottom:10px; opacity:0.9;">⚡</div>
+            <div style="font-size:1.05rem; font-weight:700; margin-bottom:6px; letter-spacing:-0.2px;">Autonomous Pipeline</div>
+            <div style="font-size:0.82rem; line-height:1.35; color:#8a92a3;">
+              One button. Full campaign. Brief → master prompt → variants → library entry. Built for speed.
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="card" style="padding:22px 20px; border:1px solid #1f252f; transition:transform .15s ease, border-color .15s; position:relative; overflow:hidden;"
+               onmouseenter="this.style.transform='translateY(-2px)'; this.style.borderColor='#b8f03e30'" 
+               onmouseleave="this.style.transform=''; this.style.borderColor='#1f252f'">
+            <div style="font-size:1.85rem; margin-bottom:10px; opacity:0.9;">🌍</div>
+            <div style="font-size:1.05rem; font-weight:700; margin-bottom:6px; letter-spacing:-0.2px;">World-Ready</div>
+            <div style="font-size:0.82rem; line-height:1.35; color:#8a92a3;">
+              Perfect localisation across 20+ markets. Headlines, body copy, disclaimers — all brand-perfect.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Elegant Mini Flow -->
+      <div style="margin-top:42px; text-align:center; opacity:0.75;">
+        <div style="font-size:0.65rem; letter-spacing:2px; margin-bottom:10px;">THE FLOW</div>
+        <div style="display:flex; align-items:center; justify-content:center; gap:10px; font-size:0.82rem; color:#a8b1c0;">
+          <div>Rough Idea</div>
+          <div style="opacity:0.4;">→</div>
+          <div><strong style="color:#fff;">Genius</strong> Prompt</div>
+          <div style="opacity:0.4;">→</div>
+          <div>Premium Asset</div>
+          <div style="opacity:0.4;">→</div>
+          <div>Full Campaign</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════ Auto Hub ═══════════════════ -->
+  <section class="tab-content" id="content-auto-hub" aria-label="Auto Hub">
+    <div style="max-width: 1080px; margin: 0 auto;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <div>
+          <div style="font-size: 0.65rem; letter-spacing: 2.5px; color: var(--accent-teal); font-weight: 700;">AUTONOMOUS PRODUCTION ENGINE</div>
+          <div style="font-size: 1.9rem; font-weight: 800; margin-top: 2px;">Auto Hub</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">Everything from the last Autonomous Run, in one place.</div>
+        </div>
+        <button onclick="runAutonomousPipeline()" class="btn btn-primary" style="padding: 10px 22px; font-weight: 700;">
+          🚀 Run Autonomous Again
+        </button>
+      </div>
+
+      <!-- No run state -->
+      <div id="autoHubEmpty" style="display: block; text-align: center; padding: 60px 20px; background: rgba(255,255,255,0.02); border: 1px solid #222; border-radius: 12px;">
+        <div style="font-size: 2.5rem; margin-bottom: 12px;">🚀</div>
+        <div style="font-weight: 700; margin-bottom: 8px;">No autonomous run yet</div>
+        <div style="color: #888; font-size: 0.9rem;">Click the <strong>🚀 Autonomous Run</strong> button in the top bar to start a full pipeline.<br>The results will appear here automatically.</div>
+      </div>
+
+      <!-- Populated content -->
+      <div id="autoHubContent" style="display: none;">
+        <!-- Summary -->
+        <div class="card" style="margin-bottom: 16px; border-left: 4px solid var(--accent-teal);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-size:0.7rem; color:#666;">LAST RUN</div>
+              <div id="autoHubTimestamp" style="font-size:1.1rem; font-weight:700;"></div>
+              <div id="autoHubProvider" style="font-size:0.85rem; color:#888; margin-top:2px;"></div>
+            </div>
+            <div class="badge badge-lime" style="font-size:0.7rem;">COMPLETE</div>
+          </div>
+          <div style="margin-top:12px; font-size:0.85rem;">
+            <strong>Brief:</strong> <span id="autoHubBrief" style="color:#ccc;"></span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <!-- Asset -->
+          <div class="card">
+            <div class="card-header" style="padding-bottom:8px;">
+              <div class="card-title" style="font-size:0.95rem;">✅ Generated Asset</div>
+            </div>
+            <div id="autoHubAsset" style="background: linear-gradient(135deg, #0d0d1a, #1a1a2e); border-radius: 10px; padding: 14px; min-height: 160px; font-size: 0.85rem; border: 1px solid #222;">
+              <!-- Populated by JS -->
+            </div>
+            <div style="margin-top:8px; font-size:0.7rem; color:#666;">Format: Social • Market: ES</div>
+          </div>
+
+          <!-- A/B -->
+          <div class="card">
+            <div class="card-header" style="padding-bottom:8px;">
+              <div class="card-title" style="font-size:0.95rem;">📈 A/B Test Results</div>
+            </div>
+            <div id="autoHubAB" style="font-size:0.85rem; line-height:1.5;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Campaign -->
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header" style="padding-bottom:6px;">
+            <div class="card-title" style="font-size:0.95rem;">📂 Campaign Created</div>
+          </div>
+          <div id="autoHubCampaign" style="font-size:0.9rem;">
+            <!-- dynamic -->
+          </div>
+        </div>
+
+        <!-- Timeline / Log -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title" style="font-size:0.95rem;">🕒 Autonomous Timeline</div>
+          </div>
+          <div id="autoHubTimeline" style="font-size:0.82rem; line-height:1.7; padding-top:4px;">
+            <!-- ul populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ═══════════════════ STUDIO ACADEMY ═══════════════════ -->
-  <section class="tab-content active" id="content-academy" aria-label="Studio Academy">
+  <section class="tab-content" id="content-academy" aria-label="Studio Academy">
     <div class="grid-2">
       <!-- Left side: Hero + Comprehensive Tool Guides -->
       <div>
@@ -572,6 +841,11 @@
             <button class="academy-guide-tab" onclick="showGuide('team')" data-guide="team">👥 Team</button>
             <button class="academy-guide-tab" onclick="showGuide('guardian')" data-guide="guardian">🛡️ Guardian</button>
             <button class="academy-guide-tab" onclick="showGuide('agents')" data-guide="agents">🤖 AI Agents</button>
+            <button class="academy-guide-tab" onclick="showGuide('auto-hub')" data-guide="auto-hub">🚀 Auto Hub</button>
+            <button class="academy-guide-tab" onclick="showGuide('dashboard')" data-guide="dashboard">💚 System Health</button>
+            <button class="academy-guide-tab" onclick="showGuide('assembly')" data-guide="assembly">🔧 Assembly Logic</button>
+            <button class="academy-guide-tab" onclick="showGuide('integrations')" data-guide="integrations">🔌 Integration Hub</button>
+            <button class="academy-guide-tab" onclick="showGuide('compliance')" data-guide="compliance">🔐 Compliance Vault</button>
             <button class="academy-guide-tab" onclick="showGuide('more')" data-guide="more">⚙️ More Tools</button>
           </div>
 
@@ -1143,42 +1417,167 @@
             </div>
           </div>
 
-          <!-- ── Guide: More Tools (System Health, Assembly Logic, Integration Hub, Compliance Vault) ── -->
+          <!-- ── Guide: Auto Hub ── -->
+          <div class="academy-guide-content" id="guide-auto-hub" style="padding:24px; display:none;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,212,170,0.12); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">🚀</div>
+              <div>
+                <div class="font-bold text-md">Auto Hub</div>
+                <div class="text-xs text-muted">Central view for all Autonomous Run outputs</div>
+              </div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">What It Does</div>
+              <div class="guide-text">Auto Hub aggregates every result from pressing the top Autonomous Run button into one clean dashboard: the generated asset, A/B test results, the newly created campaign, and a full step-by-step timeline of what the autonomous pipeline did.</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">How to Use It</div>
+              <div class="guide-steps">
+                <div class="guide-step"><div class="guide-step-num">1</div><div><div class="font-bold text-sm">Trigger an Autonomous Run</div><div class="guide-text">Click the 🚀 Autonomous Run button in the top bar. The system will execute the full pipeline (brief → asset → A/B → campaign).</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">2</div><div><div class="font-bold text-sm">Switch to Auto Hub</div><div class="guide-text">The final step of the pipeline automatically lands you here, or manually click the Auto Hub tab in the sidebar to review the latest run.</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">3</div><div><div class="font-bold text-sm">Review & Re-run</div><div class="guide-text">Use the summary cards, asset preview, A/B details, campaign link, and timeline. Hit "Run Autonomous Again" to execute a fresh pipeline.</div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Guide: System Health (Dashboard) ── -->
+          <div class="academy-guide-content" id="guide-dashboard" style="padding:24px; display:none;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <div style="width:44px; height:44px; border-radius:12px; background:rgba(34,197,94,0.12); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">💚</div>
+              <div>
+                <div class="font-bold text-md">System Health</div>
+                <div class="text-xs text-muted">Monitor all Grovolut services and performance</div>
+              </div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">What It Does</div>
+              <div class="guide-text">Monitors the status and performance of all Grovolut services. Shows API latency, uptime percentages, error rates, and system load. Use this to diagnose slow generation times or failed API calls. The status indicators are colour-coded: green = healthy, yellow = degraded, red = down.</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">How to Use It</div>
+              <div class="guide-steps">
+                <div class="guide-step"><div class="guide-step-num">1</div><div><div class="font-bold text-sm">Check the Dashboard</div><div class="guide-text">The main panel shows a compliance score (target: 95%+). Below it, flagged assets are listed with issue descriptions and severity levels (Critical, Warning, Info).</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">2</div><div><div class="font-bold text-sm">Review Metrics</div><div class="guide-text">Click any flagged item to see the exact violation, a preview of the issue, and the suggested fix. Common flags: "Missing ES financial disclaimer", "Logo too small", "Non-approved font detected."</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">3</div><div><div class="font-bold text-sm">Diagnose Issues</div><div class="guide-text">Check this tab first if any tool seems unresponsive — it will tell you if the issue is system-wide or isolated.</div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Guide: Assembly Logic ── -->
+          <div class="academy-guide-content" id="guide-assembly" style="padding:24px; display:none;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <div style="width:44px; height:44px; border-radius:12px; background:rgba(139,92,246,0.12); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">🔧</div>
+              <div>
+                <div class="font-bold text-md">Assembly Logic</div>
+                <div class="text-xs text-muted">Visual workflow builder for automated pipelines</div>
+              </div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">What It Does</div>
+              <div class="guide-text">The visual workflow builder. Create automated pipelines that chain tools together: e.g., "When a new brief is added → Generate 3 variants via Asset Generator → Run A/B test → Auto-submit winner to Campaign Library." Drag-and-drop nodes to build flows, set triggers, and define conditions. This is how you automate repetitive production workflows.</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">How to Use It</div>
+              <div class="guide-steps">
+                <div class="guide-step"><div class="guide-step-num">1</div><div><div class="font-bold text-sm">Explore Templates</div><div class="guide-text">Start with the pre-built workflow templates before creating custom ones — they cover 80% of common use cases.</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">2</div><div><div class="font-bold text-sm">Build Your Flow</div><div class="guide-text">Drag nodes onto the canvas, connect them, and configure conditions and actions for each step.</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">3</div><div><div class="font-bold text-sm">Activate & Monitor</div><div class="guide-text">Save and enable the workflow. It will run automatically when triggers fire and log results for review.</div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Guide: Integration Hub ── -->
+          <div class="academy-guide-content" id="guide-integrations" style="padding:24px; display:none;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <div style="width:44px; height:44px; border-radius:12px; background:rgba(77,141,247,0.12); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">🔌</div>
+              <div>
+                <div class="font-bold text-md">Integration Hub</div>
+                <div class="text-xs text-muted">Connect with external platforms</div>
+              </div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">What It Does</div>
+              <div class="guide-text">Connect Grovolut with external platforms: Meta Ads Manager, Google Ads, Slack, Figma, Google Drive, and Revolut's internal tools. Each integration card shows its connection status, last sync time, and permissions. Set up one-click publishing from Campaign Library directly to ad platforms.</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">How to Use It</div>
+              <div class="guide-steps">
+                <div class="guide-step"><div class="guide-step-num">1</div><div><div class="font-bold text-sm">Browse Available Integrations</div><div class="guide-text">Each card displays connection status and capabilities.</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">2</div><div><div class="font-bold text-sm">Connect Key Tools</div><div class="guide-text">Connect Slack first — it enables real-time notifications for campaign approvals and agent completions.</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">3</div><div><div class="font-bold text-sm">Publish Directly</div><div class="guide-text">Use one-click publishing from the Campaign Library to push finished assets to external platforms.</div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Guide: Compliance Vault ── -->
+          <div class="academy-guide-content" id="guide-compliance" style="padding:24px; display:none;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+              <div style="width:44px; height:44px; border-radius:12px; background:rgba(245,158,11,0.12); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">🔐</div>
+              <div>
+                <div class="font-bold text-md">Compliance Vault</div>
+                <div class="text-xs text-muted">Regulatory & brand rule repository</div>
+              </div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">What It Does</div>
+              <div class="guide-text">A secure repository of all regulatory requirements, brand guidelines, approved disclaimers, and compliance templates organised by market (UK FCA, Spain GdE, EU GDPR, etc.). Every time you create an asset, the system pulls the relevant compliance rules from this vault automatically. Admins can update rules here and they propagate across the entire studio instantly.</div>
+            </div>
+
+            <div class="guide-section">
+              <div class="guide-section-title">How to Use It</div>
+              <div class="guide-steps">
+                <div class="guide-step"><div class="guide-step-num">1</div><div><div class="font-bold text-sm">Review Requirements</div><div class="guide-text">Browse by market to see mandatory disclaimers and brand rules.</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">2</div><div><div class="font-bold text-sm">Auto-Apply</div><div class="guide-text">Rules are automatically injected during asset generation and localization.</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">3</div><div><div class="font-bold text-sm">Maintain</div><div class="guide-text">Review this vault quarterly — regulations change, and outdated disclaimers can cause real compliance issues.</div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Guide: More Tools (Mode Selector, API & Config only) ── -->
           <div class="academy-guide-content" id="guide-more" style="padding:24px; display:none;">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
               <div style="width:44px; height:44px; border-radius:12px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">⚙️</div>
               <div>
-                <div class="font-bold text-md">Additional Tools</div>
-                <div class="text-xs text-muted">System Health, Assembly Logic, Integration Hub & Compliance Vault</div>
+                <div class="font-bold text-md">More Tools & Configuration</div>
+                <div class="text-xs text-muted">Mode selector, API requirements & advanced options</div>
               </div>
             </div>
 
-            <!-- System Health -->
-            <div class="guide-section" style="background:rgba(34,197,94,0.03); padding:16px; border-radius:10px; border:1px solid rgba(34,197,94,0.08); margin-bottom:16px;">
-              <div class="guide-section-title" style="color:var(--accent-green);">💚 System Health</div>
-              <div class="guide-text">Monitors the status and performance of all Grovolut services. Shows API latency, uptime percentages, error rates, and system load. Use this to diagnose slow generation times or failed API calls. The status indicators are colour-coded: green = healthy, yellow = degraded, red = down.</div>
-              <div class="guide-tip mt-sm">Check this tab first if any tool seems unresponsive — it will tell you if the issue is system-wide or isolated.</div>
-            </div>
-
-            <!-- Assembly Logic -->
-            <div class="guide-section" style="background:rgba(139,92,246,0.03); padding:16px; border-radius:10px; border:1px solid rgba(139,92,246,0.08); margin-bottom:16px;">
-              <div class="guide-section-title" style="color:var(--accent-purple);">🔧 Assembly Logic</div>
-              <div class="guide-text">The visual workflow builder. Create automated pipelines that chain tools together: e.g., "When a new brief is added → Generate 3 variants via Asset Generator → Run A/B test → Auto-submit winner to Campaign Library." Drag-and-drop nodes to build flows, set triggers, and define conditions. This is how you automate repetitive production workflows.</div>
-              <div class="guide-tip mt-sm">Start with the pre-built workflow templates before creating custom ones — they cover 80% of common use cases.</div>
-            </div>
-
-            <!-- Integration Hub -->
-            <div class="guide-section" style="background:rgba(77,141,247,0.03); padding:16px; border-radius:10px; border:1px solid rgba(77,141,247,0.08); margin-bottom:16px;">
-              <div class="guide-section-title" style="color:var(--accent-blue);">🔌 Integration Hub</div>
-              <div class="guide-text">Connect Grovolut with external platforms: Meta Ads Manager, Google Ads, Slack, Figma, Google Drive, and Revolut's internal tools. Each integration card shows its connection status, last sync time, and permissions. Set up one-click publishing from Campaign Library directly to ad platforms.</div>
-              <div class="guide-tip mt-sm">Connect Slack first — it enables real-time notifications for campaign approvals and agent completions.</div>
-            </div>
-
-            <!-- Compliance Vault -->
-            <div class="guide-section" style="background:rgba(245,158,11,0.03); padding:16px; border-radius:10px; border:1px solid rgba(245,158,11,0.08);">
-              <div class="guide-section-title" style="color:var(--accent-orange);">🔐 Compliance Vault</div>
-              <div class="guide-text">A secure repository of all regulatory requirements, brand guidelines, approved disclaimers, and compliance templates organised by market (UK FCA, Spain GdE, EU GDPR, etc.). Every time you create an asset, the system pulls the relevant compliance rules from this vault automatically. Admins can update rules here and they propagate across the entire studio instantly.</div>
-              <div class="guide-tip mt-sm">Review this vault quarterly — regulations change, and outdated disclaimers can cause real compliance issues.</div>
+            <!-- Topbar Controls & AI Providers (kept here only) -->
+            <div class="guide-section" style="background:rgba(0,212,170,0.03); padding:16px; border-radius:10px; border:1px solid rgba(0,212,170,0.08);">
+              <div class="guide-section-title" style="color:var(--accent-teal);">🚀 Autonomous Button & Mode / AI Options</div>
+              <div class="guide-text">
+                <strong>Autonomous Run (top-right teal button)</strong><br>
+                Instantly runs a full end-to-end pipeline: picks a strong brief, generates a polished asset, internally tests variants, and creates a campaign with the result. Great for demos or when you want Grovolut to "just do it".
+              </div>
+              <div class="guide-text mt-sm">
+                <strong>Mode selector (top bar)</strong><br>
+                <ul style="margin:6px 0 0 18px; font-size:0.82rem; line-height:1.35;">
+                  <li><strong>🧪 Simulated</strong> — Basic mock outputs using fixed templates. Fast, offline, no real AI.</li>
+                  <li><strong>✦ Genius</strong> — Enables rich, direct Grok-style prompts (Prompt Generator) and custom text in asset previews. Choose the backing AI below:
+                    <ul style="margin:4px 0 0 16px; font-size:0.78rem;">
+                      <li><strong>Grok xAI</strong> — Best creative quality (default for Genius)</li>
+                      <li><strong>Gemini</strong> — Google model</li>
+                      <li><strong>Claude</strong> — Anthropic</li>
+                      <li><strong>ChatGPT</strong> — OpenAI style</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+              <div class="guide-tip mt-sm" style="background:rgba(180,40,40,0.12); border-left-color:#c44; padding:8px 10px;">
+                <strong>*MUST HAVE APPROPRIATE API CONNECTED FOR GENIUS TO WORK*</strong><br>
+                Genius produces excellent direct prompts and drives custom previews, but real image generation requires a valid API key (Grok xAI, Gemini, etc.) or manually pasting the output into the actual AI apps. This is a local prototype.
+              </div>
+              <div class="guide-tip mt-sm">Use Simulated for quick exploration. Switch to Genius + your preferred AI for realistic detailed outputs and custom assets.</div>
             </div>
           </div>
         </div>
@@ -2795,7 +3194,7 @@
       <div class="timeline-item">
         <div class="timeline-phase">Phase 1 — Foundation (Q1 2025)</div>
         <div class="timeline-title">Core Engine + Asset Generator MVP</div>
-        <div class="timeline-desc">Multi-provider AI integration (Gemini, Groq), template system, basic localisation for ES/EN markets. Brand compliance baseline.</div>
+        <div class="timeline-desc">Multi-provider AI integration (Grok xAI, Gemini), template system, basic localisation for ES/EN markets. Brand compliance baseline.</div>
         <div class="flex gap-sm mt-sm">
           <span class="badge badge-green">✓ Complete</span>
           <span class="badge badge-lime">Live</span>
@@ -3273,13 +3672,6 @@
     </div>
 
   </section>
-
-  <!-- ═══════════════════ FOOTER ═══════════════════ -->
-  <footer class="app-footer">
-    <div>Grovolut v2.0 — Autonomous Creative Production Engine</div>
-    <div class="mt-sm">Built with ❤️ in Alicante • <a href="#">Revolut Growth Studio 2.0</a> • Live Prototype Demo</div>
-    <div class="mt-sm text-xs">© 2025 Grovolut. For demonstration purposes only.</div>
-  </footer>
 
     </div>
   </main>

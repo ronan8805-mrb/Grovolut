@@ -5,8 +5,9 @@
 
 // ── State ──
 const state = {
-  provider: 'simulated',
-  activeTab: 'academy',
+  mode: 'simulated',     // 'simulated' | 'genius'
+  geniusAI: 'grok',      // 'grok' | 'gemini' | 'claude' | 'chatgpt' (only used when mode === 'genius')
+  activeTab: 'home',
   currentLocale: 'ES',
   generatedAsset: null,
   wipMode: false,
@@ -15,45 +16,135 @@ const state = {
   agentLogs: [],
 };
 
-// ── Provider Selector ──
-const providerSelect = document.getElementById('aiProvider');
+// ── Provider / Mode Selector (new UX: Mode first, then AI when Genius) ──
+const modeSelect = document.getElementById('modeSelect');
+const geniusAISelect = document.getElementById('geniusAISelect');
+const geniusAIWrapper = document.getElementById('geniusAIWrapper');
 const apiKeyField = document.getElementById('apiKeyField');
 const providerBadge = document.getElementById('providerBadge');
+const geniusStatus = document.getElementById('geniusStatus');
 
-providerSelect.addEventListener('change', function () {
-  state.provider = this.value;
-  const badges = {
-    simulated: '🧪 Simulated Mode',
-    gemini: '✦ Gemini Active',
-    groq: '⚡ Groq Active',
-  };
-  const badgeClasses = {
-    simulated: 'badge-lime',
-    gemini: 'badge-blue',
-    groq: 'badge-orange',
-  };
+// Helper: current effective AI
+function getEffectiveAI() {
+  return state.mode === 'genius' ? state.geniusAI : 'simulated';
+}
 
-  providerBadge.textContent = badges[state.provider];
-  providerBadge.className = 'badge ' + badgeClasses[state.provider];
+// Helper: is in Genius mode (rich prompts + custom previews)
+function isGeniusMode() {
+  return state.mode === 'genius';
+}
 
-  // Update section-level badges
-  ['genProviderBadge', 'guardianProviderBadge'].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.textContent = state.provider === 'simulated' ? 'Simulated' : state.provider === 'gemini' ? 'Gemini' : 'Groq';
-      el.className = 'badge ' + badgeClasses[state.provider];
-    }
-  });
+function updateModeUI() {
+  const isGenius = isGeniusMode();
+  const ai = getEffectiveAI();
 
-  // Show/hide API key
-  if (state.provider === 'simulated') {
-    apiKeyField.style.display = 'none';
-  } else {
-    apiKeyField.style.display = 'flex';
+  // Show/hide AI sub selector
+  if (geniusAIWrapper) {
+    geniusAIWrapper.style.display = isGenius ? 'flex' : 'none';
   }
 
-  showToast(`Provider switched to ${badges[state.provider]}`, 'info');
-});
+  // Main badge
+  let badgeText = '🧪 Simulated Mode';
+  let badgeClass = 'badge-lime';
+  if (isGenius) {
+    const aiLabel = {
+      grok: 'Grok xAI',
+      gemini: 'Gemini',
+      claude: 'Claude',
+      chatgpt: 'ChatGPT'
+    }[ai] || 'Grok xAI';
+    badgeText = `✦ Genius • ${aiLabel}`;
+    badgeClass = (ai === 'gemini') ? 'badge-blue' : 'badge-lime';
+  }
+  if (providerBadge) {
+    providerBadge.textContent = badgeText;
+    providerBadge.className = 'badge ' + badgeClass;
+  }
+
+  // GENIUS indicator
+  if (geniusStatus) {
+    geniusStatus.style.display = isGenius ? 'inline' : 'none';
+  }
+
+  // Section badges
+  const genBadge = document.getElementById('genProviderBadge');
+  if (genBadge) {
+    if (isGenius) {
+      const short = { grok: 'Grok xAI', gemini: 'Gemini', claude: 'Claude', chatgpt: 'ChatGPT' }[ai] || 'Grok xAI';
+      genBadge.textContent = short;
+      genBadge.className = 'badge ' + ((ai === 'gemini') ? 'badge-blue' : 'badge-lime');
+    } else {
+      genBadge.textContent = 'Simulated';
+      genBadge.className = 'badge badge-lime';
+    }
+  }
+  const assetG = document.getElementById('assetGeniusBadge');
+  if (assetG) assetG.style.display = isGenius ? 'inline' : 'none';
+
+  // API key field (optional for real AIs, hidden for sim)
+  if (apiKeyField) {
+    apiKeyField.style.display = (isGenius && ai !== 'grok') ? 'flex' : 'none';
+  }
+
+  // Live update Home tab status (if present) — slim elegant bar
+  const homeMode = document.getElementById('home-mode-badge');
+  const homeAI = document.getElementById('home-ai-badge');
+  if (homeMode) {
+    homeMode.textContent = isGenius ? '✦ GENIUS' : '🧪 SIMULATED';
+    homeMode.style.color = isGenius ? '#b8f03e' : '#a8b1c0';
+  }
+  if (homeAI) {
+    if (!isGenius) {
+      homeAI.textContent = '— MOCK';
+      homeAI.style.color = '#555';
+    } else {
+      const aiName = {
+        grok: 'GROK xAI',
+        gemini: 'GEMINI',
+        claude: 'CLAUDE',
+        chatgpt: 'CHATGPT'
+      }[ai] || 'GROK xAI';
+      homeAI.textContent = aiName;
+      homeAI.style.color = (ai === 'gemini') ? '#67e8f9' : '#b8f03e';
+    }
+  }
+}
+
+// Mode select listener
+if (modeSelect) {
+  modeSelect.addEventListener('change', function () {
+    state.mode = this.value;
+    if (state.mode === 'genius' && !state.geniusAI) state.geniusAI = 'grok';
+
+    // sync sub-select value if needed
+    if (geniusAISelect && state.mode === 'genius') {
+      geniusAISelect.value = state.geniusAI;
+    }
+
+    updateModeUI();
+    showToast(state.mode === 'genius' ? '✦ Genius mode enabled' : '🧪 Switched to Simulated', 'info');
+  });
+}
+
+// Genius AI sub-select listener
+if (geniusAISelect) {
+  geniusAISelect.addEventListener('change', function () {
+    if (state.mode === 'genius') {
+      state.geniusAI = this.value;
+      updateModeUI();
+      showToast(`Genius now using ${this.value === 'grok' ? 'Grok xAI' : this.value}`, 'info');
+    }
+  });
+}
+
+// Initialize UI on load
+function initModeUI() {
+  // default to simulated
+  if (modeSelect) modeSelect.value = state.mode;
+  if (geniusAISelect) geniusAISelect.value = state.geniusAI;
+  updateModeUI();
+}
+setTimeout(initModeUI, 50);
 
 // ── Target Market Change — auto-update brief ──
 const marketSelect = document.getElementById('targetMarket');
@@ -111,29 +202,58 @@ function testConnection() {
   setTimeout(() => {
     btn.classList.remove('loading');
     btn.disabled = false;
-    showToast(`✅ Connection to ${state.provider === 'gemini' ? 'Gemini (Google)' : 'Groq'} successful!`, 'success');
+    const ai = getEffectiveAI();
+    const connLabel = ai === 'gemini' ? 'Gemini (Google)' : ai === 'claude' ? 'Claude (Anthropic)' : ai === 'chatgpt' ? 'ChatGPT (OpenAI)' : 'Grok (xAI)';
+    showToast(`✅ Connection to ${connLabel} successful!`, 'success');
   }, 1500);
 }
 
 // ── Tab Navigation ──
-document.querySelectorAll('.tab-btn').forEach((btn) => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-});
+function attachTabListeners() {
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    // Prevent duplicate listeners
+    btn.onclick = null;
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+}
+
+// Attach immediately (script is at end of body, DOM ready)
+attachTabListeners();
 
 function switchTab(tabId) {
-  state.activeTab = tabId;
+  try {
+    state.activeTab = tabId;
 
-  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
 
-  const tabBtn = document.querySelector(`[data-tab="${tabId}"]`);
-  const tabContent = document.getElementById(`content-${tabId}`);
-  if (tabBtn) tabBtn.classList.add('active');
-  if (tabContent) tabContent.classList.add('active');
+    const tabBtn = document.querySelector(`[data-tab="${tabId}"]`);
+    const tabContent = document.getElementById(`content-${tabId}`);
+    if (tabBtn) tabBtn.classList.add('active');
+    if (tabContent) tabContent.classList.add('active');
 
-  // Reinitialise charts when dashboard is shown
-  if (tabId === 'dashboard') {
-    initCharts();
+    // Reinitialise charts when dashboard is shown
+    if (tabId === 'dashboard') {
+      initCharts();
+    }
+
+    // Keep home status and mode UI in sync when switching tabs
+    if (typeof updateModeUI === 'function') {
+      updateModeUI();
+    }
+
+    // Auto Hub
+    if (tabId === 'auto-hub' && typeof renderAutoHub === 'function') {
+      renderAutoHub();
+    }
+  } catch (e) {
+    console.error('switchTab error for', tabId, e);
+    // Fallback: try to at least show the requested content
+    const fallback = document.getElementById(`content-${tabId}`);
+    if (fallback) {
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      fallback.classList.add('active');
+    }
   }
 }
 
@@ -357,12 +477,12 @@ function generateAsset() {
   output.innerHTML = `
     <div class="output-placeholder">
       <div class="ph-icon" style="animation: spin 1s linear infinite;">⚙️</div>
-      <div>Generating with <strong>${state.provider === 'simulated' ? 'Simulated Engine' : state.provider === 'gemini' ? 'Gemini (Google)' : 'Groq (Fast)'}</strong>...</div>
+      <div>Generating with <strong>${getEffectiveAI() === 'simulated' ? 'Simulated Engine' : getEffectiveAI() === 'gemini' ? 'Gemini' : getEffectiveAI() === 'claude' ? 'Claude' : getEffectiveAI() === 'chatgpt' ? 'ChatGPT' : 'Grok xAI'}</strong>...</div>
       <div class="text-xs text-muted mt-sm">Processing creative brief for ${market} market</div>
     </div>
   `;
 
-  const delay = state.provider === 'groq' ? 800 : state.provider === 'gemini' ? 2000 : 1500;
+  const delay = (getEffectiveAI() === 'gemini') ? 2000 : 1500;
 
   setTimeout(() => {
     btn.classList.remove('loading');
@@ -370,99 +490,141 @@ function generateAsset() {
     output.classList.remove('generating');
 
     const locale = localisedContent[market] || localisedContent['EN'];
-    const providerNote = state.provider !== 'simulated'
-      ? `<div class="badge badge-${state.provider === 'gemini' ? 'blue' : 'orange'}" style="margin-bottom:12px;">Generated via ${state.provider === 'gemini' ? 'Gemini API' : 'Groq API'}</div>`
-      : '';
+    const providerNote = `<div class="badge badge-green" style="margin-bottom:12px;">GENERATION COMPLETE</div>`;
 
     let sizeStyles = getSizeStyles(format);
     let contentHTML = '';
 
+    // In simulated mode, always use the clean original preview text (not the brief)
+    // In Genius mode, allow custom text from the prompt
+    let displayHeadline = 'Upgrade Your Financial Power';
+    let displayBody = 'Metal Card Unlimited Transfers Premium Cash backs';
+    let displayCta = locale.cta;
+    let displayDisclaimer = locale.disclaimer;
+
+    const isGenius = isGeniusMode();
+    if (isGenius && prompt.length > 70) {
+      // Genius mode: use the pasted brief to create custom display text for the preview
+      let custom = prompt.trim()
+        .replace(/^(Create a single,|A cinematic,|High-end premium|You are a world-class|Ultra-premium cinematic|Ultra-premium cinematic marketing visual).*?(Revolut|campaign)\.?\s*/i, '') // strip any meta or direct prompt wrapper
+        .replace(/^(Ultra-premium| Cinematic|Centerpiece:).*?card.*?gradient\.?\s*/i, '')
+        .replace(/^["'`]+|["'`]+$/g, '')
+        .trim();
+
+      const sentences = custom.split(/[.!?]\s+/).map(s => s.trim()).filter(s => s.length > 4);
+      if (sentences.length > 0) {
+        displayHeadline = sentences[0].substring(0, 82).replace(/^[a-z]/, c => c.toUpperCase());
+      } else {
+        displayHeadline = custom.substring(0, 70);
+      }
+      if (!/[.!?…]$/.test(displayHeadline)) displayHeadline += '…';
+
+      // If the extracted headline is still photo-description-heavy, synthesize a punchier offer headline from keywords in the pasted prompt
+      const kw = prompt.toLowerCase();
+      if (/cashback/.test(kw) && displayHeadline.length < 25) {
+        displayHeadline = 'Premium Metal Card. Real Cashback.';
+      } else if (/crypto/.test(kw) && !/cashback/.test(kw)) {
+        displayHeadline = displayHeadline.length > 30 ? displayHeadline : 'Crypto Freedom. Metal Card Power.';
+      } else if (/metal card|premium card/.test(kw)) {
+        displayHeadline = displayHeadline.length > 35 ? displayHeadline : 'Elevate to Metal.';
+      }
+
+      // Body uses the next 1-2 sentences or a condensed chunk of the prompt for good ad copy length
+      const rest = sentences.slice(1).join('. ');
+      displayBody = (rest || custom.substring(60, 260)).substring(0, 220).trim();
+      if (displayBody && !/[.!?…]$/.test(displayBody)) displayBody += '.';
+      if (!displayBody) displayBody = custom.substring(30, 200);
+    }
+
+    // Helper for consistent logo rendering
+    const logoStyle = `height:auto; max-height: ${format === 'banner' ? '32px' : format === 'email' ? '28px' : '38px'}; width:auto; object-fit:contain; flex-shrink:0;`;
+
     if (format === 'story') {
+      // Story is already excellent — keep close to original but add safety
       contentHTML = `
-        <div>
-          <img src="${logoFile}?v=${Date.now()}" style="height: 36px; width: auto; object-fit: contain; margin-bottom: 24px; display: block;" alt="Revolut Logo" onerror="this.style.display='none'" />
-          <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.18em;color:var(--accent-lime);margin-bottom:12px;font-weight:700;">Revolut Premium</div>
-          <div style="font-size:1.6rem;font-weight:800;margin-bottom:16px;background:linear-gradient(135deg, #fff 30%, var(--accent-lime) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2;">${locale.headline}</div>
-          <div style="font-size:0.85rem;color:var(--text-tertiary);line-height:1.5;">${locale.body}</div>
-        </div>
-        <div>
-          <div style="display:block;text-align:center;background:var(--accent-lime);color:var(--bg-primary);padding:12px 24px;border-radius:var(--radius-full);font-weight:700;font-size:0.85rem;cursor:pointer;transition:all 0.2s;margin-bottom:20px;">${locale.cta}</div>
-          <div style="font-size:0.55rem;color:var(--text-muted);padding-top:12px;border-top:1px solid var(--border-default);">${locale.disclaimer}</div>
+        <div style="display:flex; flex-direction:column; flex:1; min-height:0;">
+          <div>
+            <img src="${logoFile}?v=${Date.now()}" style="${logoStyle} margin-bottom:20px;" alt="Revolut Logo" onerror="this.style.display='none'" />
+            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;color:var(--accent-lime);margin-bottom:10px;font-weight:700;opacity:0.9;">Revolut Premium</div>
+            <div style="font-size:1.45rem;font-weight:800;margin-bottom:14px;line-height:1.15;color:#fff;">${displayHeadline}</div>
+            <div style="font-size:0.92rem;color:var(--text-tertiary);line-height:1.4;">${displayBody}</div>
+          </div>
+          <div>
+            <div style="display:block;text-align:center;background:var(--accent-lime);color:#0a1018;padding:13px 26px;border-radius:9999px;font-weight:700;font-size:0.9rem;margin:18px 0 10px;">${displayCta}</div>
+            <div style="font-size:0.58rem;color:var(--text-muted);padding-top:8px;border-top:1px solid rgba(255,255,255,0.1);line-height:1.3;">${displayDisclaimer}</div>
+          </div>
         </div>
       `;
     } else if (format === 'banner') {
-      // Display Banner (728×90) -
-      sizeStyles = `width:728px;height:90px;max-width:100%;border-radius:var(--radius-lg);overflow:hidden;position:relative;`;
+      // Horizontal banner — extremely constrained height
       contentHTML = `
-        <div style="display: flex; align-items: center; gap: 16px; flex: 1; min-width: 0;">
-          <img src="${logoFile}?v=${Date.now()}" style="height: 28px; width: auto; object-fit: contain; display: block;" alt="Revolut Logo" onerror="this.style.display='none'" />
-          <div style="min-width: 0; flex: 1;">
-            <div style="font-size:0.95rem;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;">${locale.headline}</div>
-            <div style="font-size:0.7rem;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">${locale.body}</div>
+        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0; overflow:hidden;">
+          <img src="${logoFile}?v=${Date.now()}" style="${logoStyle} max-height:26px;" alt="Logo" onerror="this.style.display='none'" />
+          <div style="flex:1; min-width:0; overflow:hidden;">
+            <div style="font-size:13px; font-weight:800; color:#fff; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${displayHeadline}</div>
+            <div style="font-size:10px; color:#a8b1c0; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.1;">${displayBody}</div>
           </div>
         </div>
-        <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; flex-shrink: 0;">
-          <div style="display:inline-block;background:var(--accent-lime);color:var(--bg-primary);padding:6px 16px;border-radius:var(--radius-full);font-weight:700;font-size:0.75rem;cursor:pointer;transition:all 0.2s;white-space:nowrap;">${locale.cta}</div>
-          <div style="font-size:0.45rem;color:var(--text-muted);margin-top:4px;white-space:nowrap;text-align:right;">${locale.disclaimer}</div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; gap:1px;">
+          <div style="background:var(--accent-lime); color:#0a1018; padding:3px 12px; border-radius:9999px; font-weight:700; font-size:10px; white-space:nowrap; line-height:1;">${displayCta}</div>
+          <div style="font-size:7.5px; color:#5a6578; white-space:nowrap; text-align:right; line-height:1;">${displayDisclaimer}</div>
         </div>
       `;
     } else if (format === 'email') {
-      // Email Header (600×200) -
-      sizeStyles = `width:600px;height:200px;max-width:100%;border-radius:var(--radius-lg);overflow:hidden;position:relative;`;
+      // Email header — balanced vertical
       contentHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.18em;color:var(--accent-lime);margin-bottom:4px;font-weight:700;">Revolut Premium</div>
-            <div style="font-size:1.2rem;font-weight:800;color:#fff;line-height:1.25;">${locale.headline}</div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--accent-lime); font-weight:700; margin-bottom:2px;">Revolut Premium</div>
+            <div style="font-size:17px; font-weight:800; color:#fff; line-height:1.15;">${displayHeadline}</div>
           </div>
-          <img src="${logoFile}?v=${Date.now()}" style="height: 24px; width: auto; object-fit: contain;" alt="Revolut Logo" onerror="this.style.display='none'" />
+          <img src="${logoFile}?v=${Date.now()}" style="${logoStyle} max-height:24px;" alt="Logo" onerror="this.style.display='none'" />
         </div>
-        <div style="font-size:0.75rem;color:var(--text-tertiary);line-height:1.4;margin: 8px 0;">${locale.body}</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-default); padding-top: 8px;">
-          <div style="font-size:0.5rem;color:var(--text-muted);max-width: 65%;">${locale.disclaimer}</div>
-          <div style="background:var(--accent-lime);color:var(--bg-primary);padding:6px 14px;border-radius:var(--radius-full);font-weight:700;font-size:0.75rem;cursor:pointer;">${locale.cta}</div>
+        <div style="font-size:12px; color:#b8c0d0; line-height:1.35; margin:4px 0 6px;">${displayBody}</div>
+        <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
+          <div style="font-size:8.5px; color:#5a6578; max-width:58%; line-height:1.2;">${displayDisclaimer}</div>
+          <div style="background:var(--accent-lime); color:#0a1018; padding:5px 13px; border-radius:9999px; font-size:10px; font-weight:700; white-space:nowrap;">${displayCta}</div>
         </div>
       `;
     } else if (format === 'video') {
-      // Video Script (15s) -> Aspect ratio 16:9 widescreen
-      sizeStyles = 'width: 100%; max-width: 480px; aspect-ratio: 16/9; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box;';
       contentHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px;">
-          <div style="font-size:0.65rem; color:var(--accent-lime); font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">🎬 Video Script (15s)</div>
-          <img src="${logoFile}?v=${Date.now()}" style="height: 20px; width: auto; object-fit: contain;" alt="Revolut Logo" onerror="this.style.display='none'" />
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">
+          <div style="font-size:11px; color:var(--accent-lime); font-weight:700; letter-spacing:0.5px;">VIDEO SCRIPT • 15s</div>
+          <img src="${logoFile}?v=${Date.now()}" style="${logoStyle} max-height:18px;" alt="Logo" onerror="this.style.display='none'" />
         </div>
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; margin: 8px 0;">
-          <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.45;">
-            <span style="color:var(--accent-cyan); font-weight:bold;">[Visual]</span> Fast montage of metal card catching light.<br/>
-            <span style="color:var(--accent-teal); font-weight:bold;">[Voiceover]</span> "${locale.headline}. ${locale.body}"
+        <div style="flex:1; display:flex; align-items:center; padding:6px 0;">
+          <div style="font-size:13px; color:#c5d0e0; line-height:1.4;">
+            <span style="color:#67e8f9; font-weight:600;">[Visual]</span> Premium metal card catching dramatic light.<br>
+            <span style="color:#5eead4; font-weight:600;">[VO]</span> ${displayHeadline}. ${displayBody}
           </div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.55rem; color: var(--text-muted);">
-          <span>${locale.disclaimer}</span>
-          <span style="color:var(--accent-lime); font-weight:bold;">CTA: ${locale.cta}</span>
+        <div style="font-size:9px; color:#6b778a; display:flex; justify-content:space-between; align-items:center;">
+          <span>${displayDisclaimer}</span>
+          <span style="color:var(--accent-lime); font-weight:600;">${displayCta}</span>
         </div>
       `;
     } else {
-      // Social Media (1080×1080) -
-      sizeStyles = `width:1080px;height:1080px;max-width:100%;border-radius:var(--radius-lg);overflow:hidden;position:relative;`;
+      // === SOCIAL (square) — now properly laid out like a good ad ===
       contentHTML = `
-        <div>
-          <img src="${logoFile}?v=${Date.now()}" style="height: 32px; width: auto; object-fit: contain; margin-bottom: 12px; display: block;" alt="Revolut Logo" onerror="this.style.display='none'" />
-          <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.18em;color:var(--accent-lime);margin-bottom:6px;font-weight:700;">Revolut Premium</div>
-          <div style="font-size:1.35rem;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg, #fff 30%, var(--accent-lime) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.25;">${locale.headline}</div>
-          <div style="font-size:0.8rem;color:var(--text-tertiary);line-height:1.4;margin-bottom:12px;">${locale.body}</div>
-        </div>
-        <div>
-          <div style="display:inline-block;background:var(--accent-lime);color:var(--bg-primary);padding:8px 20px;border-radius:var(--radius-full);font-weight:700;font-size:0.8rem;cursor:pointer;transition:all 0.2s;margin-bottom:12px;">${locale.cta}</div>
-          <div style="font-size:0.55rem;color:var(--text-muted);padding-top:8px;border-top:1px solid var(--border-default);">${locale.disclaimer}</div>
+        <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between;">
+          <div>
+            <img src="${logoFile}?v=${Date.now()}" style="${logoStyle} margin-bottom:14px;" alt="Revolut Logo" onerror="this.style.display='none'" />
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:1.8px; color:var(--accent-lime); font-weight:700; margin-bottom:6px; opacity:0.95;">REVOLUT PREMIUM</div>
+            <div style="font-size:22px; font-weight:800; line-height:1.1; color:#fff; margin-bottom:10px;">${displayHeadline}</div>
+            <div style="font-size:13.5px; color:#a8b5c9; line-height:1.35;">${displayBody}</div>
+          </div>
+          <div>
+            <div style="display:inline-flex; align-items:center; background:var(--accent-lime); color:#0a1018; padding:9px 22px; border-radius:9999px; font-weight:700; font-size:13px; margin-top:6px; margin-bottom:8px;">${displayCta}</div>
+            <div style="font-size:9px; color:#5a6578; line-height:1.25; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">${displayDisclaimer}</div>
+          </div>
         </div>
       `;
     }
 
     output.innerHTML = `
       ${providerNote}
-      <div style="background:linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 50%, #16213e 100%);border-radius:16px;border:1px solid var(--border-hover);position:relative;overflow:hidden;margin:0 auto;${sizeStyles}">
-        <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(184,240,62,0.08),transparent);border-radius:50%;pointer-events:none;"></div>
+      <div class="creative-preview" data-format="${format}" style="background:linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 50%, #16213e 100%);border-radius:16px;border:1px solid var(--border-hover);position:relative;overflow:hidden;margin:0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); ${sizeStyles}">
+        <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(184,240,62,0.07),transparent);border-radius:50%;pointer-events:none;"></div>
         ${contentHTML}
       </div>
       <div class="flex items-center justify-between mt-md">
@@ -474,6 +636,38 @@ function generateAsset() {
         <div class="text-xs font-mono text-muted">ID: GRV-${Date.now().toString(36).toUpperCase()}</div>
       </div>
     `;
+
+    // Store last generated data for fast high-quality export — prefer custom/GENIUS-derived text when present
+    window.lastCreative = {
+      headline: displayHeadline,
+      body: displayBody,
+      cta: displayCta,
+      disclaimer: displayDisclaimer,
+      logo: logoFile,
+      format: format
+    };
+
+    // GENIUS real AI section
+    const isGeniusReal = isGeniusMode();
+    if (isGeniusReal) {
+      const assetBriefForPrompt = prompt || document.getElementById('assetPrompt').value;
+      const geniusPrompt = buildGeniusImagePrompt(assetBriefForPrompt, format, market, locale);
+      const geniusDiv = document.createElement('div');
+      geniusDiv.style.cssText = 'margin-top:10px; padding:8px 10px; background:#0a0f1a; border:1px solid #334; border-radius:6px; font-size:0.72rem;';
+      geniusDiv.innerHTML = `
+        <div style="color:#b8f03e; font-weight:700; font-size:0.65rem;">GENIUS — Real Grok Imagine Prompt</div>
+        <textarea style="width:100%; margin:6px 0; background:#111; color:#ddd; font-size:0.7rem; border:1px solid #444;" rows="3">${geniusPrompt}</textarea>
+        <button onclick="navigator.clipboard.writeText(this.parentNode.querySelector('textarea').value); showToast('Copied for Grok Imagine', 'success')" class="btn btn-sm btn-outline" style="font-size:0.65rem; padding:2px 8px;">📋 Copy for Grok Imagine</button>
+        <div style="font-size:0.6rem; color:#666; margin-top:4px;">When connected to Grok, this prompt would generate the actual image via Grok Imagine.</div>
+      `;
+      output.appendChild(geniusDiv);
+
+      const gBadge = document.getElementById('assetGeniusBadge');
+      if (gBadge) gBadge.style.display = 'inline';
+    } else {
+      const gBadge = document.getElementById('assetGeniusBadge');
+      if (gBadge) gBadge.style.display = 'none';
+    }
 
     // Enable iterate
     document.getElementById('iterateBtn').disabled = false;
@@ -575,16 +769,18 @@ function showVariants(market) {
 function getSizeStyles(format) {
   switch (format) {
     case 'story':
-      return 'width:360px;height:640px;max-width:100%;aspect-ratio:9/16;border-radius:var(--radius-lg);overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:24px;box-sizing:border-box;';
+      return 'width:360px;height:640px;max-width:100%;aspect-ratio:9/16;border-radius:var(--radius-lg);overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:28px 24px;box-sizing:border-box;';
     case 'banner':
-      return 'width:728px;height:90px;max-width:100%;border-radius:var(--radius-lg);overflow:hidden;position:relative;';
+      // Tight but clean banner — keep very compact
+      return 'width:100%;max-width:728px;height:90px;border-radius:10px;overflow:hidden;position:relative;display:flex;align-items:center;gap:12px;padding:8px 14px;box-sizing:border-box;';
     case 'email':
-      return 'width:600px;height:200px;max-width:100%;border-radius:var(--radius-lg);overflow:hidden;position:relative;';
+      return 'width:100%;max-width:560px;height:200px;border-radius:var(--radius-lg);overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:16px 20px;box-sizing:border-box;';
     case 'video':
-      return 'width:100%;max-width:480px;aspect-ratio:16/9;display:flex;flex-direction:column;justify-content:space-between;padding:20px;box-sizing:border-box;';
+      return 'width:100%;max-width:520px;aspect-ratio:16/9;border-radius:var(--radius-lg);overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:18px 22px;box-sizing:border-box;background:#0a0f1a;';
     case 'social':
     default:
-      return 'width:1080px;height:1080px;max-width:100%;border-radius:var(--radius-lg);overflow:hidden;position:relative;';
+      // Comfortable preview size + proper internal layout
+      return 'width:100%;max-width:420px;aspect-ratio:1/1;border-radius:var(--radius-lg);overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:28px 26px;box-sizing:border-box;';
   }
 }
 
@@ -942,14 +1138,15 @@ function triggerAgent(agentName) {
   }
 
   const logContainer = document.getElementById('agentLog');
-  const providerLabel = state.provider === 'simulated' ? '🧪 Simulated' : state.provider === 'gemini' ? '✦ Gemini' : '⚡ Groq';
+  const ai = getEffectiveAI();
+  const providerLabel = ai === 'simulated' ? '🧪 Simulated' : ai === 'gemini' ? '✦ Gemini' : ai === 'claude' ? '✦ Claude' : ai === 'chatgpt' ? '✦ ChatGPT' : '✦ Grok xAI';
 
   // Clear placeholder
   if (state.agentLogs.length === 0) {
     logContainer.innerHTML = '';
   }
 
-  const delay = state.provider === 'groq' ? 600 : state.provider === 'gemini' ? 1800 : 1200;
+  const delay = (getEffectiveAI() === 'gemini') ? 1800 : 1200;
 
   // Add processing message
   const processingId = `proc-${Date.now()}`;
@@ -1245,7 +1442,7 @@ function runAssembly() {
   const nodes = ['flow-brief', 'flow-ai', 'flow-localise', 'flow-comply', 'flow-review', 'flow-deploy'];
   const stages = [
     'Processing creative brief...',
-    'AI generating assets via ' + (state.provider === 'simulated' ? 'Simulated Engine' : state.provider === 'gemini' ? 'Gemini' : 'Groq') + '...',
+    'AI generating assets via ' + (getEffectiveAI() === 'simulated' ? 'Simulated Engine' : getEffectiveAI() === 'gemini' ? 'Gemini' : getEffectiveAI() === 'claude' ? 'Claude' : getEffectiveAI() === 'chatgpt' ? 'ChatGPT' : 'Grok xAI') + '...',
     'Localising for 5 markets...',
     'Running compliance checks...',
     'Preparing for review...',
@@ -1287,6 +1484,9 @@ function runAssembly() {
 // ═══════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Re-attach tab listeners inside DOMContentLoaded for max safety
+  attachTabListeners();
+
   // Init dashboard charts (they'll be re-built when tab opens)
   // Animate KPI values
   animateCounters();
@@ -1296,41 +1496,101 @@ document.addEventListener('DOMContentLoaded', () => {
   const introVideo = document.getElementById('introVideo');
   const introSkipBtn = document.getElementById('introSkipBtn');
 
+  let introFaded = false;
+
   function fadeOutIntro() {
+    if (introFaded) return;
+    introFaded = true;
+
     if (introOverlay && !introOverlay.classList.contains('fade-out')) {
       introOverlay.classList.add('fade-out');
+
+      // Pause video if playing to free resources
+      if (introVideo) {
+        try { introVideo.pause(); } catch (e) {}
+      }
+
       // After transition completes, remove elements to free resources
       setTimeout(() => {
-        introOverlay.remove();
-      }, 1200); // 1.2s matches CSS transition duration
+        if (introOverlay && introOverlay.parentNode) {
+          introOverlay.parentNode.removeChild(introOverlay);
+        }
+      }, 1200);
+    } else if (introOverlay) {
+      // Immediate removal if no transition
+      if (introOverlay.parentNode) introOverlay.parentNode.removeChild(introOverlay);
     }
   }
 
+  // Make it extremely hard to get stuck on the intro
+  function setupIntroSkip() {
+    if (!introOverlay) return;
+
+    // Click anywhere on the overlay to skip (except if clicking the button itself)
+    introOverlay.addEventListener('click', (e) => {
+      if (e.target !== introSkipBtn) {
+        fadeOutIntro();
+      }
+    });
+
+    // Keyboard support: any key or Escape/Space
+    const keyHandler = (e) => {
+      if (['Escape', ' ', 'Enter'].includes(e.key)) {
+        fadeOutIntro();
+        document.removeEventListener('keydown', keyHandler);
+      }
+    };
+    document.addEventListener('keydown', keyHandler, { once: true });
+
+    // Super hard timeout - never stay stuck longer than 6 seconds
+    setTimeout(() => {
+      if (!introFaded) {
+        console.warn('Intro video timeout - forcing skip');
+        fadeOutIntro();
+      }
+    }, 6000);
+  }
+
   if (introVideo && introOverlay) {
-    // Attempt playback immediately
-    introVideo.play().catch(err => {
-      console.log('Autoplay was prevented or video failed to play:', err);
-      // Fallback: if browser blocks muted autoplay, fade out immediately so site is accessible
+    setupIntroSkip();
+
+    // Skip button (also calls fadeOutIntro)
+    if (introSkipBtn) {
+      introSkipBtn.addEventListener('click', (e) => {
+        e.stopImmediatePropagation();
+        fadeOutIntro();
+      });
+    }
+
+    // Attempt playback
+    const tryPlay = () => {
+      introVideo.play().catch(err => {
+        console.log('Autoplay prevented or video issue:', err);
+        // Don't block the UI - fade out so user can use the app
+        fadeOutIntro();
+      });
+    };
+
+    tryPlay();
+
+    // If video loads, try play again (some browsers are picky)
+    introVideo.addEventListener('loadedmetadata', tryPlay, { once: true });
+    introVideo.addEventListener('canplay', tryPlay, { once: true });
+
+    // When video naturally ends
+    introVideo.addEventListener('ended', fadeOutIntro);
+
+    // Video failed to load or decode
+    introVideo.addEventListener('error', () => {
+      console.warn('Intro video failed to load. Skipping...');
       fadeOutIntro();
     });
 
-    // Fade out as soon as video ends
-    introVideo.addEventListener('ended', fadeOutIntro);
-
-    // Skip Button Event
-    if (introSkipBtn) {
-      introSkipBtn.addEventListener('click', fadeOutIntro);
-    }
-
-    // Safety fallback: if video is 6s but event doesn't fire, fade out at 7s
-    setTimeout(fadeOutIntro, 7000);
+    // Extra safety: if the video element exists but never reports ended, force after a while
+    // (the 6s hard timeout above already covers this)
   } else {
-    // Standard page load transition fallback
-    document.body.style.opacity = '0';
-    document.body.style.transition = 'opacity 0.6s ease-out';
-    requestAnimationFrame(() => {
-      document.body.style.opacity = '1';
-    });
+    // No intro elements found - just ensure body is visible
+    document.body.style.opacity = '1';
   }
 });
 
@@ -1531,7 +1791,26 @@ function generateMasterPrompt() {
     // Final quality standards
     enhancedSections.push(`QUALITY STANDARDS:\n- Every element must feel intentional — no filler content or generic placeholders\n- The final output should look like it came from a top-tier creative agency\n- Ensure brand consistency across all touchpoints and variations\n- Prioritise clarity over cleverness — the message should land in under 3 seconds`);
     
-    const masterPrompt = enhancedSections.join('\n\n');
+    let masterPrompt = enhancedSections.join('\n\n');
+    
+    const isGeniusRealPrompt = isGeniusMode();
+    if (isGeniusRealPrompt) {
+      // GENIUS + real provider: output a direct, rich, ready-to-paste image prompt exactly as if generated by Grok app for Imagine.
+      // No meta instructions ("create a prompt", "output only..."). Just the vivid final prompt.
+      const directBrief = roughPrompt.trim();
+      const hasMetal = isPremium || /metal|card|premium/i.test(directBrief);
+      const hasCash = isCashback || /cashback|reward/i.test(directBrief);
+      const hasCrypt = isCrypto || /crypto|bitcoin|eth|web3/i.test(directBrief);
+      const hasBank = /open.?banking|banking|transfer/i.test(directBrief);
+
+      masterPrompt = `Ultra-premium cinematic marketing visual for Revolut. ${directBrief}. ` +
+        `Centerpiece: an exquisitely detailed Revolut Premium metal card in luxurious brushed titanium, precision-engraved logo and chip details catching dramatic cinematic lighting with crisp specular highlights and elegant rim light. The card floats at a sophisticated angle against a rich deep-navy to void-black gradient. ` +
+        (hasMetal ? `Hyper-realistic metal texture, micro surface reflections and authentic physical depth. ` : ``) +
+        (hasCash ? `Floating refined cashback reward elements in vibrant lime — crisp percentage badges and delicate glowing benefit particles orbit the card with perfect balance. ` : ``) +
+        (hasCrypt ? `Subtle translucent crypto data streams and blockchain constellation accents in electric cyan and purple, layered elegantly in the mid-ground. ` : ``) +
+        (hasBank ? `Delicate open-banking connection motifs and secure abstract lines integrated tastefully into the deep background. ` : ``) +
+        `Modern luxury fintech aesthetic, bold clean sans typography space in lower third and right, electric teal highlights, sophisticated commercial photography meets moody cinematic lighting, flawless composition with generous negative space for text, razor-sharp focus, 8K photoreal detail, confident aspirational atmosphere, no people, premium advertising quality.`;
+    }
     
     if (outputText) outputText.value = masterPrompt;
     if (resultContainer) {
@@ -1980,7 +2259,7 @@ function setCreatorTemplate(template) {
   if (template !== 'blank') {
     if (document.getElementById('creatorHeadlineInput').value === '') {
       document.getElementById('creatorHeadlineInput').value = 'Upgrade Your Financial Power';
-      document.getElementById('creatorSubtextInput').value = 'Metal card • Unlimited transfers • Premium cashback';
+      document.getElementById('creatorSubtextInput').value = 'Metal Card Unlimited Transfers Premium Cash backs';
       document.getElementById('creatorCTAInput').value = 'Upgrade Now →';
     }
   }
@@ -1991,7 +2270,7 @@ function setCreatorTemplate(template) {
       <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px;">
         <div style="font-size:0.5rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-teal);font-weight:700;">Revolut Premium</div>
         <h2 id="creatorPreviewHeadline" style="font-size:1.1rem;font-weight:800;margin:0;color:#fff;">Upgrade Your Financial Power</h2>
-        <p id="creatorPreviewSubtext" style="font-size:0.7rem;color:var(--text-muted);margin:0;">Metal card • Unlimited transfers • Premium cashback</p>
+        <p id="creatorPreviewSubtext" style="font-size:0.7rem;color:var(--text-muted);margin:0;">Metal Card Unlimited Transfers Premium Cash backs</p>
       </div>
       <div id="creatorPreviewCTA" style="display:inline-block;background:var(--accent-teal);color:#0b1018;padding:6px 16px;border-radius:var(--radius-full);font-weight:700;font-size:0.75rem;white-space:nowrap;margin-left:12px;cursor:pointer;">Upgrade Now →</div>
     `;
@@ -1999,7 +2278,7 @@ function setCreatorTemplate(template) {
     card.innerHTML = `
       <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent-teal);margin-bottom:8px;">Revolut Premium</div>
       <h2 id="creatorPreviewHeadline" style="font-size:1.6rem;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg, #fff, var(--accent-teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2;">Upgrade Your Financial Power</h2>
-      <p id="creatorPreviewSubtext" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px;line-height:1.45;">Metal card • Unlimited transfers • Premium cashback</p>
+      <p id="creatorPreviewSubtext" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px;line-height:1.45;">Metal Card Unlimited Transfers Premium Cash backs</p>
       <div id="creatorPreviewCTA" style="display:inline-block;background:var(--accent-teal);color:#0b1018;padding:8px 24px;border-radius:var(--radius-full);font-weight:700;font-size:0.85rem;margin-top:auto;cursor:pointer;transition:all 0.2s;">Upgrade Now →</div>
     `;
   }
@@ -2338,13 +2617,14 @@ function assignAndRunAgent(agentName) {
   }
 
   const logContainer = document.getElementById('agentLog');
-  const providerLabel = state.provider === 'simulated' ? '🧪 Simulated' : state.provider === 'gemini' ? '✦ Gemini' : '⚡ Groq';
+  const ai = getEffectiveAI();
+  const providerLabel = ai === 'simulated' ? '🧪 Simulated' : ai === 'gemini' ? '✦ Gemini' : ai === 'claude' ? '✦ Claude' : ai === 'chatgpt' ? '✦ ChatGPT' : '✦ Grok xAI';
 
   if (state.agentLogs.length === 0) {
     logContainer.innerHTML = '';
   }
 
-  const delay = state.provider === 'groq' ? 800 : state.provider === 'gemini' ? 2200 : 1500;
+  const delay = (getEffectiveAI() === 'gemini') ? 2200 : 1500;
   const processingId = `proc-${Date.now()}`;
   logContainer.innerHTML += `
     <div id="${processingId}" class="flex items-center gap-sm" style="padding:8px var(--space-md);color:var(--accent-lime);font-size:0.82rem;animation:fadeSlideIn 0.3s ease-out;">
@@ -3243,3 +3523,777 @@ switchTab = function(tabId) {
     initTargetMarkets();
   }
 };
+
+// ═══════════════════════════════════════════════════════════════
+// 🚀 AUTONOMOUS CREATIVE PRODUCTION ENGINE — ENHANCED
+// ═══════════════════════════════════════════════════════════════
+
+function runAutonomousPipeline() {
+  const ai = getEffectiveAI();
+  const providerName = ai === 'simulated' ? 'Simulated Engine' : ai === 'gemini' ? 'Gemini' : ai === 'claude' ? 'Claude' : ai === 'chatgpt' ? 'ChatGPT' : 'Grok (xAI)';
+
+  showToast(`🚀 Starting autonomous production with ${providerName}...`, 'info');
+
+  // Prepare timeline
+  const timeline = [`Started with ${providerName}`];
+
+  // Step 1: Go to Asset Generator
+  switchTab('generator');
+
+  // Prepare a strong demo brief (multi-market premium feel)
+  const demoPrompt = `Create a premium Revolut Ultra metal card campaign targeting ambitious professionals aged 28-45 in Spain and UK. Focus on exclusive lifestyle benefits, priority support, high cashback tiers, and the prestige of the black metal card. Tone: confident, sophisticated, modern. Formats: Social square + vertical story.`;
+
+  const promptEl = document.getElementById('assetPrompt');
+  const marketEl = document.getElementById('targetMarket');
+  const formatEl = document.getElementById('assetFormat');
+
+  if (promptEl) promptEl.value = demoPrompt;
+  if (marketEl) marketEl.value = 'ES';
+  if (formatEl) formatEl.value = 'social';
+
+  // Kick off generation
+  setTimeout(() => {
+    generateAsset();
+    timeline.push('Asset generated from brief');
+
+    // Chain the rest of the autonomous flow
+    setTimeout(() => {
+      showToast('✓ Asset generated. Running autonomous localisation + variants...', 'success');
+      timeline.push('Localisation & variants executed');
+
+      // Simulate localisation update
+      state.currentLocale = 'ES';
+      updateLocalisedCopy();
+
+      // Auto show high compliance
+      setTimeout(() => {
+        const scoreEl = document.getElementById('complianceScore');
+        if (scoreEl) scoreEl.textContent = '99%';
+        showToast('✓ Brand compliance verified at 99%', 'success');
+        timeline.push('Compliance verified at 99%');
+      }, 600);
+
+      // Step 2: Simulate A/B internally and pick winner
+      setTimeout(() => {
+        simulateAutonomousAB();
+        timeline.push('A/B test completed — Version A wins');
+
+        // Step 3: Create + populate a campaign
+        setTimeout(() => {
+          autoCreateCampaignFromGeneration(demoPrompt);
+          timeline.push('Campaign created & published');
+
+          // Final step: Celebrate + populate HUB
+          setTimeout(() => {
+            switchTab('auto-hub');
+
+            // Populate AUTO HUB with everything
+            updateAutoHubRun({
+              timestamp: new Date().toLocaleTimeString(),
+              provider: providerName,
+              brief: demoPrompt.substring(0, 110) + '...',
+              assetHeadline: 'Upgrade Your Financial Power',
+              assetBody: 'Metal Card Unlimited Transfers Premium Cash backs',
+              campaignName: 'Ultra Metal Launch — ES/UK Autonomous',
+              timeline: timeline
+            });
+
+            showToast('🎉 Autonomous pipeline complete — all results in AUTO HUB!', 'success');
+
+            // Bonus: update a KPI feel
+            const kpi = document.getElementById('kpiVolume');
+            if (kpi) kpi.textContent = (parseInt(kpi.textContent.replace(/,/g,'')) + 184 || 13031).toLocaleString();
+          }, 900);
+        }, 1100);
+      }, 1400);
+    }, 1600);
+  }, 420);
+}
+
+function simulateAutonomousAB() {
+  // Update the predicted numbers dramatically in favor of the "winner"
+  const aCtr = document.getElementById('predictedCtrA');
+  const bCtr = document.getElementById('predictedCtrB');
+  const log = document.getElementById('abSimLog');
+
+  if (aCtr) aCtr.textContent = '5.7%';
+  if (bCtr) bCtr.textContent = '4.1%';
+
+  if (log) {
+    log.innerHTML = `Autonomous A/B run complete.<br>
+    Winner: Version A (+39% lift)<br>
+    Simulated 12,400 users • p=0.003`;
+  }
+
+  showToast('📈 Autonomous A/B complete — Version A wins decisively', 'success');
+}
+
+function autoCreateCampaignFromGeneration(promptText) {
+  // Ensure we have campaign state
+  if (!window.grovolutCampaigns) {
+    try { window.grovolutCampaigns = JSON.parse(localStorage.getItem('grovolut_campaigns') || '[]'); } catch { window.grovolutCampaigns = []; }
+  }
+
+  const newCamp = {
+    id: 'GRV-' + Date.now().toString(36).toUpperCase(),
+    name: 'Ultra Metal Launch — ES/UK Autonomous',
+    market: 'ES / UK',
+    status: 'Live',
+    assets: 4,
+    created: new Date().toISOString(),
+    prompt: promptText.substring(0, 120) + '...',
+  };
+
+  window.grovolutCampaigns.unshift(newCamp);
+  try {
+    localStorage.setItem('grovolut_campaigns', JSON.stringify(window.grovolutCampaigns));
+  } catch {}
+
+  // If campaigns tab is visible, re-render
+  const container = document.getElementById('campaignsContainer');
+  if (container && container.offsetParent !== null) {
+    renderCampaigns();
+  } else {
+    showToast('📁 Campaign auto-created in library', 'info');
+  }
+}
+
+// ── AUTO HUB helpers ──
+let lastAutoRun = null;
+
+function renderAutoHub() {
+  const empty = document.getElementById('autoHubEmpty');
+  const content = document.getElementById('autoHubContent');
+  if (!lastAutoRun) {
+    if (empty) empty.style.display = 'block';
+    if (content) content.style.display = 'none';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  if (content) content.style.display = 'block';
+
+  // Timestamp & provider
+  const ts = document.getElementById('autoHubTimestamp');
+  const prov = document.getElementById('autoHubProvider');
+  if (ts) ts.textContent = lastAutoRun.timestamp || 'Just now';
+  if (prov) prov.textContent = `Provider: ${lastAutoRun.provider || 'Simulated'}`;
+
+  // Brief
+  const briefEl = document.getElementById('autoHubBrief');
+  if (briefEl) briefEl.textContent = lastAutoRun.brief || '';
+
+  // Asset preview (simple recreation for demo)
+  const assetEl = document.getElementById('autoHubAsset');
+  if (assetEl) {
+    assetEl.innerHTML = `
+      <div style="font-size:0.65rem; color:#b8f03e; margin-bottom:4px;">REVOLUT PREMIUM</div>
+      <div style="font-size:1.15rem; font-weight:800; color:#fff; line-height:1.1;">${lastAutoRun.assetHeadline || 'Upgrade Your Financial Power'}</div>
+      <div style="font-size:0.8rem; color:#a8b1c0; margin-top:4px;">${lastAutoRun.assetBody || 'Metal Card • Unlimited Transfers • Premium Cash backs'}</div>
+      <div style="margin-top:10px; display:inline-block; background:#b8f03e; color:#0a1018; padding:4px 10px; border-radius:999px; font-size:0.7rem; font-weight:700;">Upgrade Now →</div>
+    `;
+  }
+
+  // A/B
+  const abEl = document.getElementById('autoHubAB');
+  if (abEl) {
+    abEl.innerHTML = `
+      <div><strong>Winner:</strong> Version A <span style="color:#b8f03e;">(+39% lift)</span></div>
+      <div>Predicted CTR A: <strong>5.7%</strong> • B: 4.1%</div>
+      <div style="margin-top:4px; font-size:0.75rem;">Simulated 12,400 users • p=0.003</div>
+    `;
+  }
+
+  // Campaign
+  const campEl = document.getElementById('autoHubCampaign');
+  if (campEl) {
+    campEl.innerHTML = `
+      <div><strong>${lastAutoRun.campaignName || 'Ultra Metal Launch — ES/UK Autonomous'}</strong></div>
+      <div style="font-size:0.75rem; color:#888;">Status: <span style="color:#b8f03e;">Live</span> • 4 assets • Markets: ES / UK</div>
+      <div style="margin-top:6px;"><button class="btn btn-xs btn-outline" onclick="switchTab('campaigns')">View in Campaign Library →</button></div>
+    `;
+  }
+
+  // Timeline
+  const logEl = document.getElementById('autoHubTimeline');
+  if (logEl) {
+    logEl.innerHTML = (lastAutoRun.timeline || []).map(step => 
+      `<div style="margin-bottom:4px;">• ${step}</div>`
+    ).join('');
+  }
+}
+
+function updateAutoHubRun(data) {
+  lastAutoRun = data;
+  // If hub is visible, re-render
+  const hub = document.getElementById('content-auto-hub');
+  if (hub && hub.classList.contains('active')) {
+    renderAutoHub();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CAMPAIGN LIBRARY — Fully functional (add, filter, status, persist)
+// ═══════════════════════════════════════════════════════════════
+
+function getCampaigns() {
+  if (!window.grovolutCampaigns) {
+    try {
+      window.grovolutCampaigns = JSON.parse(localStorage.getItem('grovolut_campaigns') || '[]');
+    } catch { window.grovolutCampaigns = []; }
+  }
+  return window.grovolutCampaigns;
+}
+
+function setCampaigns(camps) {
+  window.grovolutCampaigns = camps;
+  try { localStorage.setItem('grovolut_campaigns', JSON.stringify(camps)); } catch {}
+}
+
+function renderCampaigns(filtered = null) {
+  const container = document.getElementById('campaignsContainer');
+  if (!container) return;
+
+  const camps = filtered || getCampaigns();
+
+  if (camps.length === 0) {
+    container.innerHTML = `
+      <div class="card" style="grid-column:1 / -1; text-align:center; padding:40px 20px;">
+        <div style="font-size:2rem; opacity:.4;">📂</div>
+        <div class="mt-sm text-sm text-muted">No campaigns yet.<br>Run Autonomous or click "+ New Campaign"</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = camps.map((c, idx) => `
+    <div class="card" style="padding:14px; font-size:0.85rem;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div style="font-weight:700;">${c.name}</div>
+          <div class="text-xs text-muted">${c.market} • ${c.assets} assets</div>
+        </div>
+        <span class="badge ${c.status === 'Live' ? 'badge-green' : c.status === 'Approved' ? 'badge-lime' : c.status === 'Review' ? 'badge-orange' : 'badge-blue'}">${c.status}</span>
+      </div>
+      <div class="text-xs mt-sm" style="color:var(--text-tertiary); line-height:1.3;">${c.prompt || ''}</div>
+      <div class="flex gap-xs mt-md" style="flex-wrap:wrap;">
+        <button class="btn btn-xs btn-secondary" onclick="cycleCampaignStatus(${idx})">Cycle Status</button>
+        <button class="btn btn-xs btn-outline" onclick="viewCampaign(${idx})">View</button>
+        <button class="btn btn-xs btn-danger" onclick="deleteCampaign(${idx})" style="margin-left:auto;">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterCampaigns() {
+  const q = (document.getElementById('campaignSearchInput')?.value || '').toLowerCase();
+  const market = document.getElementById('campaignMarketFilter')?.value || 'all';
+  const camps = getCampaigns();
+
+  const filtered = camps.filter(c => {
+    const matchQ = !q || c.name.toLowerCase().includes(q) || (c.prompt || '').toLowerCase().includes(q);
+    const matchM = market === 'all' || c.market.includes(market);
+    return matchQ && matchM;
+  });
+
+  renderCampaigns(filtered);
+}
+
+function openNewCampaignModal() {
+  const name = prompt('Campaign name:', 'New Premium Campaign');
+  if (!name) return;
+
+  const market = prompt('Primary market(s):', 'ES / UK') || 'Multi';
+  const camps = getCampaigns();
+
+  camps.unshift({
+    id: 'GRV-' + Date.now().toString(36).toUpperCase(),
+    name: name.trim(),
+    market: market.trim(),
+    status: 'Draft',
+    assets: 1,
+    created: new Date().toISOString(),
+    prompt: 'Manually created via UI',
+  });
+
+  setCampaigns(camps);
+  renderCampaigns();
+  showToast('📁 New campaign created', 'success');
+}
+
+function cycleCampaignStatus(idx) {
+  const camps = getCampaigns();
+  if (!camps[idx]) return;
+  const order = ['Draft', 'Review', 'Approved', 'Live'];
+  let i = order.indexOf(camps[idx].status);
+  camps[idx].status = order[(i + 1) % order.length];
+  setCampaigns(camps);
+  renderCampaigns();
+}
+
+function viewCampaign(idx) {
+  const camps = getCampaigns();
+  const c = camps[idx];
+  if (!c) return;
+  alert(`Campaign: ${c.name}\nMarket: ${c.market}\nStatus: ${c.status}\nAssets: ${c.assets}\n\n${c.prompt || ''}`);
+}
+
+function deleteCampaign(idx) {
+  if (!confirm('Delete this campaign?')) return;
+  const camps = getCampaigns();
+  camps.splice(idx, 1);
+  setCampaigns(camps);
+  renderCampaigns();
+}
+
+// Seed some demo campaigns on first run if empty
+function seedDemoCampaignsIfNeeded() {
+  const camps = getCampaigns();
+  if (camps.length === 0) {
+    const demo = [
+      { id: 'GRV-DEMO1', name: 'Spain Premium Launch Q2', market: 'ES', status: 'Live', assets: 7, created: '2026-05-12', prompt: 'Premium metal card acquisition in Spain' },
+      { id: 'GRV-DEMO2', name: 'UK Ultra Summer Stories', market: 'UK', status: 'Approved', assets: 3, created: '2026-06-01', prompt: 'Ultra lifestyle vertical creatives' },
+    ];
+    setCampaigns(demo);
+  }
+}
+
+// Call seed early
+setTimeout(seedDemoCampaignsIfNeeded, 120);
+
+// Re-render campaigns when tab activated (extend switchTab)
+const oldSwitch = switchTab;
+switchTab = function(tab) {
+  oldSwitch(tab);
+  if (tab === 'campaigns') {
+    setTimeout(() => renderCampaigns(), 30);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// A/B TEST ENHANCEMENTS
+// ═══════════════════════════════════════════════════════════════
+
+function simulateABTest() {
+  const log = document.getElementById('abSimLog');
+  if (!log) return;
+
+  log.innerHTML = 'Simulating 10,000 users...';
+
+  setTimeout(() => {
+    const a = (4.1 + Math.random() * 1.8).toFixed(1);
+    const b = (3.4 + Math.random() * 1.6).toFixed(1);
+    const winner = parseFloat(a) > parseFloat(b) ? 'A' : 'B';
+    const lift = (Math.abs(parseFloat(a) - parseFloat(b)) / Math.min(parseFloat(a), parseFloat(b)) * 100).toFixed(0);
+
+    log.innerHTML = `
+      10k users simulated.<br>
+      A: ${a}% &nbsp; | &nbsp; B: ${b}%<br>
+      <strong style="color:var(--accent-teal)">Winner: Version ${winner} (+${lift}%)</strong>
+    `;
+
+    // Update live numbers
+    const aEl = document.getElementById('predictedCtrA');
+    const bEl = document.getElementById('predictedCtrB');
+    if (aEl) aEl.textContent = a + '%';
+    if (bEl) bEl.textContent = b + '%';
+
+    showToast(`🏆 Simulation complete — Version ${winner} wins by ${lift}%`, 'success');
+  }, 950);
+}
+
+function resetABSimulation() {
+  const log = document.getElementById('abSimLog');
+  const a = document.getElementById('predictedCtrA');
+  const b = document.getElementById('predictedCtrB');
+  if (log) log.textContent = 'Simulation reset. Ready.';
+  if (a) a.textContent = '4.8%';
+  if (b) b.textContent = '3.9%';
+  showToast('A/B simulation reset', 'info');
+}
+
+function voteAB(version, like) {
+  showToast(`${like ? '👍' : '👎'} Vote recorded for Version ${version}`, 'info');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED CREATOR TOOL — live preview updates
+// ═══════════════════════════════════════════════════════════════
+
+function wireCreatorLivePreview() {
+  const canvas = document.getElementById('canvasBody');
+  if (!canvas) return;
+
+  // Make sure preview updates when user types in creator areas
+  const headline = document.getElementById('creatorHeadline');
+  const body = document.getElementById('creatorBody');
+  const cta = document.getElementById('creatorCTA');
+
+  const updatePreview = () => {
+    if (!canvas) return;
+    const h = headline ? headline.value : 'Premium Power';
+    const b = body ? body.value : 'Unlock exclusive rewards';
+    const c = cta ? cta.value : 'Upgrade Now';
+
+    // Update any text inside the canvas preview if it exists
+    const prevH = canvas.querySelector('.live-headline');
+    const prevB = canvas.querySelector('.live-body');
+    const prevC = canvas.querySelector('.live-cta');
+
+    if (prevH) prevH.textContent = h;
+    if (prevB) prevB.textContent = b;
+    if (prevC) prevC.textContent = c;
+  };
+
+  [headline, body, cta].forEach(el => {
+    if (el) el.addEventListener('input', updatePreview);
+  });
+
+  // Bonus: also allow direct canvas click to focus controls
+  canvas.addEventListener('click', () => {
+    if (headline) headline.focus();
+  });
+}
+
+// Wire it after DOM ready
+setTimeout(wireCreatorLivePreview, 650);
+
+// Export PNG removed (no real image generation in this prototype without APIs) 
+// function stubbed
+function exportAssetPNG() {
+  showToast('Export PNG removed in this build (prototype only).', 'info');
+}
+
+
+
+
+
+function buildGeniusImagePrompt(brief, format, market, locale) {
+  const b = (brief || '').trim();
+  const hasMetal = /metal|card|premium/i.test(b);
+  const hasCashback = /cashback|reward|cash back|cash-back/i.test(b);
+  const hasCrypto = /crypto|bitcoin|eth|web3|blockchain/i.test(b);
+  const hasOpen = /open.?banking|banking|seamless/i.test(b);
+  const hasVideo = /video|reel|motion|story|animate/i.test(b);
+
+  let prompt = `Ultra-premium cinematic production photograph for a Revolut ${format} marketing asset targeting ${market}. `;
+
+  prompt += `Hero subject: a precision-engineered Revolut Premium metal card in brushed titanium black with razor-sharp engraved details, beveled edges and a luminous holographic chip element, positioned at a dynamic 35-degree angle. Dramatic cinematic lighting with a strong key light from the upper left creating beautiful specular highlights and soft gradient reflections across the metallic surface, subtle rim light separating the card from the background. `;
+
+  if (hasMetal) {
+    prompt += `The metal card dominates the composition with hyper-real material detail — brushed textures, micro-engravings, and authentic weight. `;
+  }
+  if (hasCashback) {
+    prompt += `Graceful floating cashback reward graphics — crisp lime and emerald percentage callouts (e.g. "1%"), shimmering coin-like reward particles, and elegant benefit trails — arranged with perfect negative space around the card. `;
+  }
+  if (hasCrypto) {
+    prompt += `Subtle holographic crypto elements and delicate real-time price tickers in electric purple-to-cyan gradients, floating ethereally in the mid-ground with soft glows and faint data lattice. `;
+  }
+  if (hasOpen) {
+    prompt += `Faint elegant open-banking connectivity motifs — secure abstract node lines and trust signals — integrated tastefully deep in the background. `;
+  }
+
+  prompt += `${b} `;
+
+  prompt += `Overall aesthetic: modern luxury fintech, deep rich navy (#0a1628) to absolute black gradient background, vibrant teal (#00d4aa) and lime accent highlights, impeccable typography hierarchy reserved in the lower and right thirds for clean overlay text. Sophisticated commercial studio photography fused with cinematic drama. Shot on large format, shallow depth of field, razor focus on card details, no people, zero clutter, generous breathing room. Hyper-detailed, 8K resolution, photoreal materials, confident aspirational mood, premium advertising quality, flawless composition.`;
+
+  if (hasVideo) {
+    prompt += ` Designed with motion in mind: strong focal point, smooth parallax-friendly layers, text safe zones.`;
+  }
+
+  return prompt;
+}
+
+function deepInlineStyles(sourceElement) {
+  const clone = sourceElement.cloneNode(true);
+
+  // Only the properties that actually affect how the ad looks
+  const propsToCopy = [
+    'background', 'background-color', 'background-image', 'background-size', 'background-position', 'background-repeat',
+    'color', 'font-family', 'font-size', 'font-weight', 'font-style', 'line-height', 'letter-spacing', 'text-align', 'text-transform', 'white-space', 'text-shadow',
+    'border', 'border-radius', 'border-color', 'border-style', 'border-width', 'box-shadow',
+    'padding', 'margin', 'width', 'height', 'min-width', 'max-width', 'display', 'position',
+    'flex-direction', 'flex-wrap', 'align-items', 'justify-content', 'gap', 'align-self',
+    'box-sizing', 'overflow', 'opacity', 'transform', 'z-index', 'vertical-align'
+  ];
+
+  const walker = (original, cloned) => {
+    if (!original || !cloned) return;
+
+    const computed = window.getComputedStyle(original);
+    let styleString = '';
+
+    for (const prop of propsToCopy) {
+      const value = computed.getPropertyValue(prop);
+      if (value && value !== 'none' && value !== 'normal' && value !== 'auto' && value !== '0px') {
+        styleString += `${prop}:${value};`;
+      }
+    }
+
+    // Always keep the original inline styles that were already there (they are usually the important ones)
+    if (original.style.cssText) {
+      styleString = original.style.cssText + (styleString ? ';' + styleString : '');
+    }
+
+    cloned.style.cssText = styleString;
+
+    const origChildren = original.children;
+    const cloneChildren = cloned.children;
+    for (let i = 0; i < origChildren.length; i++) {
+      walker(origChildren[i], cloneChildren[i]);
+    }
+  };
+
+  walker(sourceElement, clone);
+  return clone;
+}
+
+function improvedFallbackExport(target, scale = 2) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const rect = target.getBoundingClientRect();
+
+  canvas.width = Math.round(rect.width * scale);
+  canvas.height = Math.round(rect.height * scale);
+
+  ctx.fillStyle = '#0a0d14';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Strong fallback with inlined styles
+  try {
+    const styled = deepInlineStyles(target);
+    styled.style.width = rect.width + 'px';
+    styled.style.height = rect.height + 'px';
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', canvas.width);
+    svg.setAttribute('height', canvas.height);
+
+    const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+    fo.setAttribute('width', '100%');
+    fo.setAttribute('height', '100%');
+
+    const div = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+    div.style.cssText = `width:${rect.width}px;height:${rect.height}px;transform:scale(${scale});transform-origin:top left;`;
+    div.appendChild(styled);
+
+    fo.appendChild(div);
+    svg.appendChild(fo);
+
+    const data = new XMLSerializer().serializeToString(svg);
+    const url = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(data)));
+
+    const tmp = new Image();
+    tmp.onload = () => {
+      ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
+      try {
+        const dataUrl = canvas.toDataURL('image/png', 0.95);
+        const fmt = document.getElementById('assetFormat')?.value || 'creative';
+        const filename = `grovolut-export-${Date.now()}.png`;
+
+        const btn = document.getElementById('exportAssetBtn');
+        if (btn) {
+          btn._pendingPng = { dataUrl, filename };
+          btn.textContent = '💾 Save PNG';
+          btn.style.opacity = '';
+          btn.style.pointerEvents = '';
+
+          const origText = btn.textContent; // will be overwritten
+          const originalOnClick = btn.onclick;
+
+          btn.onclick = function saveNow() {
+            const pending = btn._pendingPng;
+            if (pending) {
+              const a = document.createElement('a');
+              a.href = pending.dataUrl;
+              a.download = pending.filename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              showToast('📥 PNG exported (fallback) — matches screen', 'success');
+              delete btn._pendingPng;
+            }
+            btn.textContent = '⬇️ Export PNG';
+            btn.onclick = originalOnClick;
+            if (typeof finishExport === 'function') finishExport();
+          };
+
+          showToast('Export ready — click "Save PNG" to download', 'info');
+        } else {
+          // ultimate fallback
+          const a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
+      } catch (e) {
+        console.warn('Fallback toDataURL failed', e);
+      }
+    };
+    tmp.src = url;
+    return;
+  } catch (e) {}
+
+  // Last resort - very basic but guaranteed
+  ctx.fillStyle = '#fff';
+  ctx.font = '14px Inter, sans-serif';
+  ctx.fillText('Grovolut Creative Export', 20, 30);
+  try {
+    const dataUrl = canvas.toDataURL('image/png');
+    const filename = `grovolut-basic-${Date.now()}.png`;
+    const btn = document.getElementById('exportAssetBtn');
+    if (btn) {
+      btn._pendingPng = { dataUrl, filename };
+      btn.textContent = '💾 Save PNG';
+      btn.style.opacity = '';
+      btn.style.pointerEvents = '';
+
+      const originalOnClick = btn.onclick;
+      btn.onclick = function saveNow() {
+        const pending = btn._pendingPng;
+        if (pending) {
+          const a = document.createElement('a');
+          a.href = pending.dataUrl;
+          a.download = pending.filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          showToast('📥 Basic PNG exported', 'info');
+          delete btn._pendingPng;
+        }
+        btn.textContent = '⬇️ Export PNG';
+        btn.onclick = originalOnClick;
+      };
+      showToast('Basic export ready — click to save', 'info');
+    } else {
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  } catch (e) {}
+}
+
+// (Old fallback removed - improvedFallbackExport is used instead)
+
+// Export PNG button removed per request (prototype only, no real API image export)
+
+// ═══════════════════════════════════════════════════════════════
+// COMMAND PALETTE (Grok-style Ctrl+K / Cmd+K)
+// ═══════════════════════════════════════════════════════════════
+
+let paletteOpen = false;
+
+function openCommandPalette() {
+  if (paletteOpen) return;
+  paletteOpen = true;
+
+  const existing = document.getElementById('commandPalette');
+  if (existing) existing.remove();
+
+  const palette = document.createElement('div');
+  palette.id = 'commandPalette';
+  palette.style.cssText = `
+    position:fixed; top:18%; left:50%; transform:translateX(-50%); z-index:99999;
+    width: min(620px, 92vw); background:#0c1018; border:1px solid var(--border-hover);
+    border-radius:14px; box-shadow:0 30px 80px rgba(0,0,0,0.6); overflow:hidden;
+    font-family: Inter, system-ui, sans-serif;
+  `;
+
+  palette.innerHTML = `
+    <div style="padding:10px 14px; border-bottom:1px solid var(--border-default); display:flex; gap:8px; align-items:center; background:rgba(255,255,255,0.02);">
+      <span style="font-size:0.8rem; color:var(--text-muted);">Command Palette</span>
+      <input id="paletteInput" placeholder="Type to search actions or tabs..." style="flex:1; background:transparent; border:none; outline:none; color:#fff; font-size:0.95rem;">
+    </div>
+    <div id="paletteResults" style="max-height:320px; overflow:auto; padding:4px 0;"></div>
+    <div style="padding:8px 14px; font-size:0.68rem; color:var(--text-muted); border-top:1px solid var(--border-default);">Esc to close • Enter to run • Tab to navigate</div>
+  `;
+
+  document.body.appendChild(palette);
+
+  const input = palette.querySelector('#paletteInput');
+  const results = palette.querySelector('#paletteResults');
+
+  const actions = [
+    { label: 'Generate Asset', action: () => { switchTab('generator'); document.getElementById('assetPrompt')?.focus(); palette.remove(); paletteOpen=false; } },
+    { label: '🚀 Run Autonomous Production Pipeline', action: () => { palette.remove(); paletteOpen=false; runAutonomousPipeline(); } },
+    { label: 'Open Prompt Generator', action: () => { switchTab('prompt-generator'); palette.remove(); paletteOpen=false; } },
+    { label: 'Open A/B Test Studio', action: () => { switchTab('ab-test'); palette.remove(); paletteOpen=false; } },
+    { label: 'Open Campaigns', action: () => { switchTab('campaigns'); palette.remove(); paletteOpen=false; } },
+    { label: 'Run Brand Guardian Scan', action: () => { switchTab('guardian'); setTimeout(() => document.getElementById('uploadArea')?.click?.(), 300); palette.remove(); paletteOpen=false; } },
+    { label: 'Switch to Genius (Grok)', action: () => { state.mode='genius'; state.geniusAI='grok'; const ms=document.getElementById('modeSelect'); const gs=document.getElementById('geniusAISelect'); if(ms) ms.value='genius'; if(gs) gs.value='grok'; if(typeof updateModeUI==='function') updateModeUI(); palette.remove(); paletteOpen=false; showToast('Switched to Genius (Grok xAI)', 'info'); } },
+    { label: 'Clear all state (local)', action: () => { localStorage.clear(); location.reload(); } },
+  ];
+
+  function renderResults(filter = '') {
+    const f = filter.toLowerCase();
+    const matches = actions.filter(a => a.label.toLowerCase().includes(f));
+    results.innerHTML = matches.map((a, i) => `
+      <div class="palette-item" data-idx="${i}" style="padding:9px 16px; cursor:pointer; font-size:0.9rem; display:flex; justify-content:space-between; align-items:center;">
+        <span>${a.label}</span>
+      </div>
+    `).join('') || `<div style="padding:12px 16px; color:#666; font-size:0.85rem;">No matches</div>`;
+
+    results.querySelectorAll('.palette-item').forEach(el => {
+      el.onmousedown = (e) => {
+        const idx = parseInt(el.dataset.idx);
+        if (matches[idx]) matches[idx].action();
+      };
+    });
+  }
+
+  renderResults();
+
+  input.oninput = (e) => renderResults(e.target.value);
+  input.focus();
+
+  const close = () => { palette.remove(); paletteOpen = false; };
+  palette.onkeydown = (e) => {
+    if (e.key === 'Escape') close();
+    if (e.key === 'Enter') {
+      const first = results.querySelector('.palette-item');
+      if (first) first.dispatchEvent(new MouseEvent('mousedown'));
+    }
+  };
+
+  // Click outside to close
+  setTimeout(() => {
+    document.addEventListener('click', function handler(ev) {
+      if (!palette.contains(ev.target)) {
+        close();
+        document.removeEventListener('click', handler);
+      }
+    }, { once: true });
+  }, 10);
+}
+
+// Global hotkey
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    openCommandPalette();
+  }
+});
+
+// Add a little hint button next to autonomous? (optional - already good)
+
+// Final init touches
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize new mode UI (modeSelect + geniusAI)
+  if (typeof initModeUI === 'function') {
+    initModeUI();
+  } else if (typeof updateModeUI === 'function') {
+    updateModeUI();
+  }
+
+  // Seed campaigns UI if on that tab already (rare)
+  setTimeout(() => {
+    const campContainer = document.getElementById('campaignsContainer');
+    if (campContainer) renderCampaigns();
+  }, 300);
+
+  // Add "Export PNG" hint to asset header if desired (already handled in generate override)
+  console.log('%c[Grovolut] Enhanced prototype ready. Mode: Simulated / Genius + AI. Ctrl/Cmd+K for command palette.', 'color:#0d4');
+});
