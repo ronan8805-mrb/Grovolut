@@ -31,6 +31,17 @@
   // Click anywhere on intro to skip (very early binding)
   (function() {
     const overlay = document.getElementById('introOverlay');
+    const video = document.getElementById('introVideo');
+    // Replace with vertical video ONLY on mobile (early, before autoplay)
+    if (video) {
+      const isMobile = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (isMobile) {
+        const src = video.querySelector('source');
+        if (src) src.src = 'intro_mobile.mp4';
+        else video.src = 'intro_mobile.mp4';
+        video.load();
+      }
+    }
     if (overlay) {
       overlay.addEventListener('click', function(e) {
         const btn = document.getElementById('introSkipBtn');
