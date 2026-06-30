@@ -102,14 +102,6 @@
           </select>
         </div>
 
-        <div class="api-key-field" id="apiKeyField" style="display:none;">
-          <input type="password" class="api-key-input" id="apiKeyInput" placeholder="API Key...">
-          <button class="btn btn-sm btn-outline" id="testConnectionBtn" onclick="testConnection()">
-            <span class="spinner"></span>
-            <span class="btn-text">Test</span>
-          </button>
-        </div>
-
         <div class="badge badge-lime" id="providerBadge">🧪 Simulated Mode</div>
 
         <!-- Small GENIUS indicator (shown when active) -->
@@ -1519,7 +1511,7 @@
 
             <div class="guide-section">
               <div class="guide-section-title">What It Does</div>
-              <div class="guide-text">Connect Grovolut with external platforms: Meta Ads Manager, Google Ads, Slack, Figma, Google Drive, and Revolut's internal tools. Each integration card shows its connection status, last sync time, and permissions. Set up one-click publishing from Campaign Library directly to ad platforms.</div>
+              <div class="guide-text">Connect Grovolut with external platforms + AI providers. Includes API key management for Grok xAI, Claude, Gemini, and ChatGPT (enter keys/secrets here only). Each integration shows status and capabilities. Set up one-click publishing from Campaign Library directly to ad platforms.</div>
             </div>
 
             <div class="guide-section">
@@ -2867,8 +2859,53 @@
       </div>
     </div>
     
+    <!-- AI Provider API Keys Section (moved from topbar) -->
     <div class="card mt-md">
-      <div class="card-title text-sm"><span class="icon">🔑</span> API Access Keys</div>
+      <div class="card-title text-sm"><span class="icon">🧠</span> AI Provider API Keys (Grok xAI, Claude, Gemini, ChatGPT)</div>
+      <div class="grid-2 mt-md" style="gap:16px;">
+        <!-- Grok xAI -->
+        <div class="input-group">
+          <label class="input-label">Grok xAI API Key</label>
+          <div class="flex gap-sm">
+            <input type="password" class="input-field" id="aiKeyGrok" placeholder="xai-..." style="font-family:monospace; font-size:0.8rem;">
+            <button class="btn btn-sm btn-outline" onclick="saveAIKey('grok')">Save</button>
+          </div>
+          <div class="text-xs mt-xs" id="aiStatusGrok" style="color:#888;">Disconnected</div>
+        </div>
+        <!-- Gemini -->
+        <div class="input-group">
+          <label class="input-label">Gemini API Key</label>
+          <div class="flex gap-sm">
+            <input type="password" class="input-field" id="aiKeyGemini" placeholder="AIza..." style="font-family:monospace; font-size:0.8rem;">
+            <button class="btn btn-sm btn-outline" onclick="saveAIKey('gemini')">Save</button>
+          </div>
+          <div class="text-xs mt-xs" id="aiStatusGemini" style="color:#888;">Disconnected</div>
+        </div>
+        <!-- Claude -->
+        <div class="input-group">
+          <label class="input-label">Claude API Key</label>
+          <div class="flex gap-sm">
+            <input type="password" class="input-field" id="aiKeyClaude" placeholder="sk-ant-..." style="font-family:monospace; font-size:0.8rem;">
+            <button class="btn btn-sm btn-outline" onclick="saveAIKey('claude')">Save</button>
+          </div>
+          <div class="text-xs mt-xs" id="aiStatusClaude" style="color:#888;">Disconnected</div>
+        </div>
+        <!-- ChatGPT -->
+        <div class="input-group">
+          <label class="input-label">ChatGPT / OpenAI API Key</label>
+          <div class="flex gap-sm">
+            <input type="password" class="input-field" id="aiKeyChatgpt" placeholder="sk-..." style="font-family:monospace; font-size:0.8rem;">
+            <button class="btn btn-sm btn-outline" onclick="saveAIKey('chatgpt')">Save</button>
+          </div>
+          <div class="text-xs mt-xs" id="aiStatusChatgpt" style="color:#888;">Disconnected</div>
+        </div>
+      </div>
+      <div class="text-xs text-muted mt-sm">Keys are stored locally in your browser (localStorage). Used only for Genius mode real API prompts.</div>
+    </div>
+
+    <!-- Existing API Access Keys -->
+    <div class="card mt-md">
+      <div class="card-title text-sm"><span class="icon">🔑</span> Grovolut API Access Keys</div>
       <div class="grid-2 mt-md">
         <div class="input-group">
           <label class="input-label">Grovolut Webhook URL</label>

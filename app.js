@@ -20,7 +20,6 @@ const state = {
 const modeSelect = document.getElementById('modeSelect');
 const geniusAISelect = document.getElementById('geniusAISelect');
 const geniusAIWrapper = document.getElementById('geniusAIWrapper');
-const apiKeyField = document.getElementById('apiKeyField');
 const providerBadge = document.getElementById('providerBadge');
 const geniusStatus = document.getElementById('geniusStatus');
 
@@ -53,7 +52,8 @@ function updateModeUI() {
       claude: 'Claude',
       chatgpt: 'ChatGPT'
     }[ai] || 'Grok xAI';
-    badgeText = `✦ Genius • ${aiLabel}`;
+    // No API box here anymore — keys live in Integration Hub
+    badgeText = `✦ Genius • ${aiLabel} (Connected)`;
     badgeClass = (ai === 'gemini') ? 'badge-blue' : 'badge-lime';
   }
   if (providerBadge) {
@@ -66,10 +66,8 @@ function updateModeUI() {
     geniusStatus.style.display = isGenius ? 'inline' : 'none';
   }
 
-  // API key field (optional for real AIs, hidden for sim)
-  if (apiKeyField) {
-    apiKeyField.style.display = (isGenius && ai !== 'grok') ? 'flex' : 'none';
-  }
+  // No more API input in main UI — "Connected" status only
+  // (API keys/secrets managed exclusively in Integration Hub)
 
   // Live update Home tab status (if present) — slim elegant bar
   const homeMode = document.getElementById('home-mode-badge');
@@ -175,18 +173,61 @@ const formatSelect = document.getElementById('assetFormat');
 
 // ── Test Connection ──
 function testConnection() {
-  const btn = document.getElementById('testConnectionBtn');
-  btn.classList.add('loading');
-  btn.disabled = true;
-
-  setTimeout(() => {
-    btn.classList.remove('loading');
-    btn.disabled = false;
-    const ai = getEffectiveAI();
-    const connLabel = ai === 'gemini' ? 'Gemini (Google)' : ai === 'claude' ? 'Claude (Anthropic)' : ai === 'chatgpt' ? 'ChatGPT (OpenAI)' : 'Grok (xAI)';
-    showToast(`✅ Connection to ${connLabel} successful!`, 'success');
-  }, 1500);
+  // Test button removed from main UI. Kept for backward compat (no-op now).
+  showToast('API testing now handled in Integration Hub.', 'info');
 }
+
+// ── AI Provider Keys (now only in Integration Hub) ──
+const AI_KEY_PREFIX = 'ai_key_';
+
+function getAIKey(provider) {
+  return localStorage.getItem(AI_KEY_PREFIX + provider) || '';
+}
+
+function saveAIKey(provider) {
+  const input = document.getElementById('aiKey' + (provider.charAt(0).toUpperCase() + provider.slice(1)));
+  if (!input) return;
+  const value = input.value.trim();
+  if (!value) {
+    showToast('Please enter a key', 'warning');
+    return;
+  }
+  localStorage.setItem(AI_KEY_PREFIX + provider, value);
+  updateAIKeyStatus(provider);
+  showToast(`${provider.toUpperCase()} API key saved.`, 'success');
+  // If currently using this provider in Genius, update main UI badge
+  if (state.mode === 'genius' && state.geniusAI === provider) {
+    updateModeUI();
+  }
+}
+
+function updateAIKeyStatus(provider) {
+  const statusEl = document.getElementById('aiStatus' + (provider.charAt(0).toUpperCase() + provider.slice(1)));
+  if (!statusEl) return;
+  const hasKey = !!getAIKey(provider);
+  statusEl.textContent = hasKey ? 'Connected' : 'Disconnected';
+  statusEl.style.color = hasKey ? '#22c55e' : '#888';
+}
+
+function loadAIKeysToHub() {
+  const providers = ['grok', 'gemini', 'claude', 'chatgpt'];
+  providers.forEach(p => {
+    const input = document.getElementById('aiKey' + (p.charAt(0).toUpperCase() + p.slice(1)));
+    if (input) {
+      input.value = getAIKey(p);
+    }
+    updateAIKeyStatus(p);
+  });
+}
+
+// Hook into DOM ready for loading keys when Integration Hub might be shown
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (document.getElementById('aiKeyGrok')) {
+      loadAIKeysToHub();
+    }
+  }, 300);
+});
 
 // ── Tab Navigation ──
 function attachTabListeners() {
@@ -4754,6 +4795,11 @@ switchTab = function(tab) {
   }
   if (tab === 'analytics') {
     setTimeout(() => initAnalyticsTab && initAnalyticsTab(), 50);
+  }
+  if (tab === 'integrations') {
+    setTimeout(() => {
+      if (typeof loadAIKeysToHub === 'function') loadAIKeysToHub();
+    }, 50);
   }
 };
 
