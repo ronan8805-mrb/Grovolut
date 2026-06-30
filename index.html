@@ -84,9 +84,6 @@
     </div>
 
     <div class="topbar-right">
-      <button onclick="runAutonomousPipeline()" class="btn btn-primary" style="padding: 8px 18px; font-size: 0.78rem; font-weight:700; letter-spacing:0.02em; display:flex; align-items:center; gap:6px; border-color: var(--accent-teal);">
-        <span>🚀</span> <span>Autonomous Run</span>
-      </button>
       <div class="provider-bar" id="providerBar">
         <label for="modeSelect">⚡ Mode</label>
         <select class="provider-select" id="modeSelect" aria-label="Select Mode">
@@ -755,7 +752,7 @@
       <div id="autoHubEmpty" style="display: block; text-align: center; padding: 60px 20px; background: rgba(255,255,255,0.02); border: 1px solid #222; border-radius: 12px;">
         <div style="font-size: 2.5rem; margin-bottom: 12px;">🚀</div>
         <div style="font-weight: 700; margin-bottom: 8px;">No autonomous run yet</div>
-        <div style="color: #888; font-size: 0.9rem;">Click the <strong>🚀 Autonomous Run</strong> button in the top bar to start a full pipeline.<br>The results will appear here automatically.</div>
+        <div style="color: #888; font-size: 0.9rem;">Click the <strong>🚀 Run Autonomous Again</strong> button above to start a full pipeline.<br>The results will appear here automatically.</div>
       </div>
 
       <!-- Populated content -->
@@ -1447,13 +1444,13 @@
 
             <div class="guide-section">
               <div class="guide-section-title">What It Does</div>
-              <div class="guide-text">Auto Hub aggregates every result from pressing the top Autonomous Run button into one clean dashboard: the generated asset, A/B test results, the newly created campaign, and a full step-by-step timeline of what the autonomous pipeline did.</div>
+              <div class="guide-text">Auto Hub aggregates every result from an Autonomous Run into one clean dashboard: the generated asset, A/B test results, the newly created campaign, and a full step-by-step timeline of what the autonomous pipeline did.</div>
             </div>
 
             <div class="guide-section">
               <div class="guide-section-title">How to Use It</div>
               <div class="guide-steps">
-                <div class="guide-step"><div class="guide-step-num">1</div><div><div class="font-bold text-sm">Trigger an Autonomous Run</div><div class="guide-text">Click the 🚀 Autonomous Run button in the top bar. The system will execute the full pipeline (brief → asset → A/B → campaign).</div></div></div>
+                <div class="guide-step"><div class="guide-step-num">1</div><div><div class="font-bold text-sm">Trigger an Autonomous Run</div><div class="guide-text">Click the "Run Autonomous Again" button in the Auto Hub tab. The system will execute the full pipeline (brief → asset → A/B → campaign).</div></div></div>
                 <div class="guide-step"><div class="guide-step-num">2</div><div><div class="font-bold text-sm">Switch to Auto Hub</div><div class="guide-text">The final step of the pipeline automatically lands you here, or manually click the Auto Hub tab in the sidebar to review the latest run.</div></div></div>
                 <div class="guide-step"><div class="guide-step-num">3</div><div><div class="font-bold text-sm">Review & Re-run</div><div class="guide-text">Use the summary cards, asset preview, A/B details, campaign link, and timeline. Hit "Run Autonomous Again" to execute a fresh pipeline.</div></div></div>
               </div>
@@ -1572,10 +1569,10 @@
 
             <!-- Topbar Controls & AI Providers (kept here only) -->
             <div class="guide-section" style="background:rgba(0,212,170,0.03); padding:16px; border-radius:10px; border:1px solid rgba(0,212,170,0.08);">
-              <div class="guide-section-title" style="color:var(--accent-teal);">🚀 Autonomous Button & Mode / AI Options</div>
+              <div class="guide-section-title" style="color:var(--accent-teal);">🚀 Autonomous Run & Mode / AI Options</div>
               <div class="guide-text">
-                <strong>Autonomous Run (top-right teal button)</strong><br>
-                Instantly runs a full end-to-end pipeline: picks a strong brief, generates a polished asset, internally tests variants, and creates a campaign with the result. Great for demos or when you want Grovolut to "just do it".
+                <strong>Autonomous Run</strong><br>
+                Instantly runs a full end-to-end pipeline: picks a strong brief, generates a polished asset, internally tests variants, and creates a campaign with the result. The button is located inside the Auto Hub tab (since the top-right one was removed).
               </div>
               <div class="guide-text mt-sm">
                 <strong>Mode selector (top bar)</strong><br>
