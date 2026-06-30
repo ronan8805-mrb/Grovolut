@@ -497,6 +497,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
+  min-height: 44px; /* super mobile touch targets */
   transition: all var(--transition-base);
   white-space: nowrap;
   position: relative;
@@ -1719,26 +1720,52 @@ input[type="range"]::-webkit-slider-thumb:hover {
 @media (max-width: 1024px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .split-screen { grid-template-columns: 1fr; gap: 12px; }
+  .ab-divider { flex-direction: row; height: auto; margin: 8px 0; }
+  .ab-divider-line { width: 100%; height: 1px; }
 }
 
 @media (max-width: 768px) {
   .dashboard-layout { flex-direction: column; }
   .dashboard-body { flex-direction: column; }
-  .sidebar { width: 100%; flex-direction: row; padding: 8px; overflow-x: auto; }
-  .tabs-nav { flex-direction: row; gap: 4px; padding: 0; }
-  .tab-btn { padding: 8px 12px; font-size: 0.72rem; }
+  .sidebar { width: 100%; flex-direction: row; padding: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tabs-nav { flex-direction: row; gap: 4px; padding: 0; white-space: nowrap; }
+  .tab-btn { padding: 10px 14px; font-size: 0.7rem; min-height: 44px; }
   .topbar { height: auto; padding: 12px 16px; flex-wrap: wrap; gap: 12px; }
   .topbar-left { flex-direction: column; align-items: flex-start; gap: 8px; }
   .topbar-divider { display: none; }
-  .app-container { padding: 16px; }
+  .app-container { padding: 12px; }
   .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .flowchart { flex-direction: column; }
   .flow-arrow { transform: rotate(90deg); }
-  .kpi-value { font-size: 1.4rem; }
+  .kpi-value { font-size: 1.3rem; }
+  .masonry-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .mockup-media { height: 140px; }
+  .mockup-title { font-size: 0.85rem; }
+  .canvas-container { min-height: 280px; }
+  .canvas-body { padding: 12px; min-height: 200px; }
+  .creator-preview-card { max-width: 100% !important; padding: 20px 12px !important; }
+  .split-screen > .card { padding: 12px; }
+  .modal-content { width: 95%; max-width: 95%; padding: 16px; }
+  .btn, .tab-btn { min-height: 44px; padding: 10px 14px; font-size: 0.85rem; }
+  input, select, textarea { font-size: 16px; } /* prevent zoom on iOS */
+  .tm-dashboard-row { grid-template-columns: 1fr; }
+  .tm-markets-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
-  .card { padding: var(--space-md); }
+  .card { padding: 12px; }
+  .kpi-value { font-size: 1.1rem; }
+  .tab-btn { font-size: 0.65rem; padding: 8px 10px; }
+  .masonry-grid { grid-template-columns: 1fr; }
+  .mockup-media { height: 120px; }
+  .topbar { padding: 8px 12px; }
+  .app-container { padding: 8px; }
+  .sidebar { padding: 6px; }
+  .tm-page-title { font-size: 1.4rem; }
+  .tm-dash-value { font-size: 1.6rem; }
+  .tabs-nav { scroll-snap-type: x mandatory; }
+  .tab-btn { scroll-snap-align: start; }
 }
 
 
@@ -2130,6 +2157,19 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transition: opacity var(--transition-fast);
 }
 
+@media (max-width: 480px) {
+  .mockup-overlay {
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+  }
+  .mockup-overlay .btn {
+    font-size: 0.6rem;
+    padding: 4px 8px;
+    min-height: 32px;
+  }
+}
+
 .mockup-card:hover .mockup-overlay {
   opacity: 1;
 }
@@ -2269,6 +2309,23 @@ input[type="range"]::-webkit-slider-thumb:hover {
   justify-content: center;
   height: 100%;
   position: relative;
+}
+
+@media (max-width: 768px) {
+  .ab-divider {
+    flex-direction: row;
+    height: auto;
+    margin: 12px 0;
+  }
+  .ab-divider-line {
+    width: 100%;
+    height: 1px;
+    margin: 0 8px;
+  }
+  .ab-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+  }
 }
 
 .ab-divider-line {
@@ -3067,6 +3124,23 @@ input:checked + .slider:before {
 }
 
 /* Campaign card polish */
+
+#creatorPreviewCard {
+  transition: all 0.2s ease;
+}
+
+@media (max-width: 480px) {
+  #creatorPreviewCard {
+    padding: 16px 10px !important;
+    border-radius: 12px !important;
+  }
+  #creatorPreviewCard h2 {
+    font-size: 1.1rem !important;
+  }
+  #creatorPreviewCard p {
+    font-size: 0.7rem !important;
+  }
+}
 #campaignsContainer .card {
   transition: transform 0.1s ease, border-color 0.1s ease;
 }
