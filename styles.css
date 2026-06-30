@@ -357,6 +357,8 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* ── App Container ── */
@@ -1751,6 +1753,44 @@ input[type="range"]::-webkit-slider-thumb:hover {
   input, select, textarea { font-size: 16px; } /* prevent zoom on iOS */
   .tm-dashboard-row { grid-template-columns: 1fr; }
   .tm-markets-grid { grid-template-columns: 1fr; }
+
+  /* Fix provider/mode bar overflow */
+  .topbar-right {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .provider-bar {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .provider-bar label {
+    font-size: 0.55rem;
+  }
+  .provider-select {
+    min-width: 80px;
+    padding: 2px 6px;
+    font-size: 0.65rem;
+  }
+  #geniusAIWrapper {
+    gap: 3px;
+    margin-left: 4px;
+  }
+  #geniusAIWrapper label {
+    font-size: 0.5rem;
+  }
+  #geniusAISelect {
+    padding: 2px 4px;
+    font-size: 0.6rem;
+  }
+  #providerBadge {
+    font-size: 0.5rem;
+    padding: 1px 4px;
+  }
+  .api-key-field input {
+    width: 70px;
+    font-size: 0.6rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1766,6 +1806,33 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .tm-dash-value { font-size: 1.6rem; }
   .tabs-nav { scroll-snap-type: x mandatory; }
   .tab-btn { scroll-snap-align: start; }
+
+  /* Extra tight for provider bar on very small screens */
+  .topbar-right {
+    gap: 4px;
+  }
+  .provider-bar {
+    gap: 2px;
+  }
+  .provider-select {
+    min-width: 60px;
+    padding: 1px 4px;
+    font-size: 0.55rem;
+  }
+  #geniusAIWrapper {
+    gap: 2px;
+    margin-left: 2px;
+  }
+  #geniusAISelect {
+    padding: 1px 3px;
+    font-size: 0.5rem;
+  }
+  #providerBadge {
+    font-size: 0.45rem;
+  }
+  .api-key-field {
+    display: none; /* hide on tiny screens to prevent overflow */
+  }
 }
 
 
