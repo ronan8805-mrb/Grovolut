@@ -330,13 +330,11 @@
               <div class="card-title"><span class="icon">🎨</span> Asset Generator + Localiser</div>
               <div class="card-subtitle">Generate multi-market creatives with AI</div>
             </div>
-            <div class="badge badge-lime" id="genProviderBadge">Simulated</div>
-        <span id="assetGeniusBadge" style="display:none; margin-left:6px; font-size:0.6rem; background:#b8f03e; color:#0a1018; padding:1px 5px; border-radius:3px; font-weight:700;">GENIUS</span>
           </div>
 
           <div class="input-group">
             <label class="input-label" for="assetPrompt">Creative Brief / Prompt</label>
-            <textarea class="input-field" id="assetPrompt" rows="4" placeholder="e.g., Create a Revolut Premium card upgrade ad targeting millennials in Spain, emphasizing cashback rewards and fee-free transfers...">Create a Revolut Premium card upgrade ad targeting millennials in Spain. Emphasize: cashback rewards, fee-free international transfers, and premium metal card design. Tone: confident, modern, aspirational.</textarea>
+            <textarea class="input-field" id="assetPrompt" rows="4" placeholder="e.g., Create a Revolut Premium card upgrade ad targeting millennials, emphasizing cashback rewards and fee-free transfers...">Create a Revolut Premium card upgrade ad targeting millennials. Emphasize: cashback rewards, fee-free international transfers, and premium metal card design. Tone: confident, modern, aspirational.</textarea>
           </div>
 
           <div class="input-group mt-xs" style="margin-bottom:16px;">
@@ -1095,6 +1093,7 @@
               <div class="guide-tips">
                 <div class="guide-tip">Sort by "Most Used" to see which templates your team relies on — these are proven performers.</div>
                 <div class="guide-tip">Use the Spain and Web3 filters when creating market-specific campaigns to see localised examples.</div>
+                <div class="guide-tip">Gallery starts with demo examples (hardcoded). Generate in Asset Generator → click "Add to Inspiration Gallery". Or use "Save Visible to Campaign Library" to move them into the real Campaign Library tab.</div>
               </div>
             </div>
           </div>
@@ -1138,6 +1137,13 @@
                     <div class="guide-text">The tone meter shows a score out of 100. Below it, you'll see specific suggestions: words to replace, phrases to tighten, and alternatives that better match the chosen tone profile. Aim for 80+ in all campaigns.</div>
                   </div>
                 </div>
+                <div class="guide-step">
+                  <div class="guide-step-num">4</div>
+                  <div>
+                    <div class="font-bold text-sm">Listen to the Voice</div>
+                    <div class="guide-text">Use the <strong>🔊 Listen to Suggestion</strong> and <strong>🔊 Play Input</strong> buttons to hear the text spoken using your browser's built-in voices. Select different voices from the dropdown. Double-click any tone preset button for a quick audio preview. Speech parameters (speed/pitch) adapt to the current tone sliders.</div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1146,6 +1152,7 @@
               <div class="guide-tips">
                 <div class="guide-tip">Test your copy against multiple tone profiles — what sounds "Confident" in English might read as "Aggressive" when localised to Spanish.</div>
                 <div class="guide-tip">Use the lab to A/B test headlines before sending them to the A/B Test Studio for performance validation.</div>
+                <div class="guide-tip">Click 🔊 buttons to hear how the copy actually *sounds*. Different browser voices (especially Spanish ones) give realistic previews for tone validation.</div>
               </div>
             </div>
           </div>
@@ -1703,10 +1710,11 @@
       <!-- Card 1 -->
       <div class="mockup-card" data-category="video spain metal">
         <div class="mockup-media">
-          <div style="font-size:2rem;">🏎️</div>
+          <img src="audi_f1_reveal.jpg" alt="Audi F1 x Revolut Reveal" />
           <div class="mockup-overlay">
             <button class="btn btn-sm btn-primary" onclick="remixTemplate('Audi F1 x Revolut Reveal', '6s animation • Spain localised • Audi F1 Red', 'logo_audif1_red.png')">Remix</button>
             <button class="btn btn-sm btn-secondary" onclick="openAddToCampaignModal('Audi_F1_Reveal.png')">Use in Campaign</button>
+            <button class="btn btn-xs btn-outline" onclick="saveGalleryCardToLibrary(this)" style="margin-top:4px; font-size:0.65rem; padding:2px 6px;">💾 Save to Library</button>
           </div>
         </div>
         <div class="mockup-details">
@@ -1721,10 +1729,11 @@
       <!-- Card 2 -->
       <div class="mockup-card" data-category="static spain metal">
         <div class="mockup-media">
-          <div style="font-size:2rem;">💳</div>
+          <img src="revolut_premium_card.jpg" alt="Revolut Premium Matte Slate" />
           <div class="mockup-overlay">
             <button class="btn btn-sm btn-primary" onclick="remixTemplate('Revolut Premium Matte Slate', 'Static ad • Millennials Spain • Main Wordmark', 'logo_wordmark_white.png')">Remix</button>
             <button class="btn btn-sm btn-secondary" onclick="openAddToCampaignModal('Revolut_Premium_Slate.png')">Use in Campaign</button>
+            <button class="btn btn-xs btn-outline" onclick="saveGalleryCardToLibrary(this)" style="margin-top:4px; font-size:0.65rem; padding:2px 6px;">💾 Save to Library</button>
           </div>
         </div>
         <div class="mockup-details">
@@ -1739,10 +1748,11 @@
       <!-- Card 3 -->
       <div class="mockup-card" data-category="stories web3">
         <div class="mockup-media">
-          <div style="font-size:2rem;">🌐</div>
+          <img src="crypto_cashback.jpg" alt="Crypto Cashback Launch" />
           <div class="mockup-overlay">
             <button class="btn btn-sm btn-primary" onclick="remixTemplate('Crypto Cashback Launch', 'Instagram Story • Web3 Crypto • App Icon', 'logo_appicon_white.png')">Remix</button>
             <button class="btn btn-sm btn-secondary" onclick="openAddToCampaignModal('Crypto_Cashback.png')">Use in Campaign</button>
+            <button class="btn btn-xs btn-outline" onclick="saveGalleryCardToLibrary(this)" style="margin-top:4px; font-size:0.65rem; padding:2px 6px;">💾 Save to Library</button>
           </div>
         </div>
         <div class="mockup-details">
@@ -1757,10 +1767,11 @@
       <!-- Card 4 -->
       <div class="mockup-card" data-category="video metal">
         <div class="mockup-media">
-          <div style="font-size:2rem;">⚡</div>
+          <img src="revolut_ultra.jpg" alt="Revolut Ultra Glow Loop" />
           <div class="mockup-overlay">
             <button class="btn btn-sm btn-primary" onclick="remixTemplate('Revolut Ultra Glow Loop', '6s animation • Global campaign • App Icon White', 'logo_appicon_white.png')">Remix</button>
             <button class="btn btn-sm btn-secondary" onclick="openAddToCampaignModal('Ultra_Glow_Loop.png')">Use in Campaign</button>
+            <button class="btn btn-xs btn-outline" onclick="saveGalleryCardToLibrary(this)" style="margin-top:4px; font-size:0.65rem; padding:2px 6px;">💾 Save to Library</button>
           </div>
         </div>
         <div class="mockup-details">
@@ -1775,10 +1786,11 @@
       <!-- Card 5 -->
       <div class="mockup-card" data-category="static spain">
         <div class="mockup-media">
-          <div style="font-size:2rem;">🏖️</div>
+          <img src="summer_cashback_spain.jpg" alt="Summer Cashback Spain" />
           <div class="mockup-overlay">
             <button class="btn btn-sm btn-primary" onclick="remixTemplate('Summer Cashback Spain', 'Banner ad • Spain travel • Revolut Business', 'logo_business_white.png')">Remix</button>
             <button class="btn btn-sm btn-secondary" onclick="openAddToCampaignModal('Summer_Cashback_ES.png')">Use in Campaign</button>
+            <button class="btn btn-xs btn-outline" onclick="saveGalleryCardToLibrary(this)" style="margin-top:4px; font-size:0.65rem; padding:2px 6px;">💾 Save to Library</button>
           </div>
         </div>
         <div class="mockup-details">
@@ -1793,10 +1805,11 @@
       <!-- Card 6 -->
       <div class="mockup-card" data-category="stories metal">
         <div class="mockup-media">
-          <div style="font-size:2rem;">🔥</div>
+          <img src="metal_card_burning.jpg" alt="Metal Card Burning Reveal" />
           <div class="mockup-overlay">
             <button class="btn btn-sm btn-primary" onclick="remixTemplate('Metal Card Burning Reveal', 'Vertical Story • Metal series • Main Wordmark White', 'logo_wordmark_white.png')">Remix</button>
             <button class="btn btn-sm btn-secondary" onclick="openAddToCampaignModal('Metal_Card_Burn.png')">Use in Campaign</button>
+            <button class="btn btn-xs btn-outline" onclick="saveGalleryCardToLibrary(this)" style="margin-top:4px; font-size:0.65rem; padding:2px 6px;">💾 Save to Library</button>
           </div>
         </div>
         <div class="mockup-details">
@@ -1812,8 +1825,8 @@
     
     <!-- Gallery Action buttons -->
     <div class="flex gap-sm mt-lg justify-end">
-      <button class="btn btn-outline" onclick="showToast('Saved selection to library!', 'success')">Save to My Library</button>
-      <button class="btn btn-primary" onclick="showToast('Sent campaign proposals to client!', 'success')">Send to Client</button>
+      <button class="btn btn-outline" onclick="saveVisibleGalleryToLibrary()">💾 Save All Visible to Campaign Library</button>
+      <span class="text-xs text-muted" style="align-self:center; margin-left:8px;">Tip: Use the 💾 button on each card for individual saves</span>
     </div>
   </section>
 
@@ -1877,6 +1890,15 @@
             <label class="input-label">AI Output Suggestions</label>
             <div id="voiceRewriteSuggestions" style="padding:12px; background:rgba(255,255,255,0.02); border:1px solid var(--border-default); border-radius:8px; font-size:0.88rem; color:var(--text-secondary);">
               "Eleva tu nivel. 1.6% de cashback en compras y total libertad de cambio los fines de semana con Metal. Así de simple."
+            </div>
+
+            <!-- Voice Playback Controls -->
+            <div style="margin-top:8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <button class="btn btn-sm btn-primary" onclick="playSuggestionVoice()" title="Hear the AI suggestion spoken">🔊 Listen to Suggestion</button>
+              <button class="btn btn-sm btn-outline" onclick="playInputVoice()" title="Hear the text in the editor above">🔊 Play Input</button>
+              <button class="btn btn-sm btn-outline" onclick="stopVoice()" title="Stop speaking">⏹ Stop</button>
+              <select id="voiceSelect" class="select-field" style="font-size:0.68rem; padding:2px 6px; max-width:170px;" title="Choose browser voice (affects language & accent)"></select>
+              <span class="text-xs text-muted" style="margin-left:4px;">Browser speech</span>
             </div>
           </div>
         </div>
@@ -2126,6 +2148,7 @@
             <div class="canvas-body" id="canvasBody" style="display:flex; align-items:center; justify-content:center; padding:20px; overflow:auto; min-height:480px;">
               <div id="canvasContent" style="width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center;">
                 <div id="creatorPreviewCard" style="background:linear-gradient(135deg, #0b1018, #131b28);border-radius:16px;padding:40px;border:1px solid rgba(255,255,255,0.06);max-width:300px;width:100%;aspect-ratio:9/16;display:flex;flex-direction:column;justify-content:space-between;text-align:center;box-sizing:border-box;transition:all 0.3s ease;">
+                  <img id="creatorPreviewLogo" src="logo_wordmark_white.png" style="height:36px; width:auto; object-fit:contain; margin:0 auto 8px; display:block;" alt="Logo" />
                   <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent-teal);margin-bottom:8px;">Revolut Premium</div>
                   <h2 id="creatorPreviewHeadline" style="font-size:1.6rem;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg, #fff, var(--accent-teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2;">Upgrade Your Financial Power</h2>
                   <p id="creatorPreviewSubtext" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px;line-height:1.45;">Metal card • Unlimited transfers • Premium cashback</p>
@@ -2178,7 +2201,7 @@
 
             <div class="input-group">
               <label class="input-label" for="creatorBGInput">Background Theme</label>
-              <select class="select-field" id="creatorBGInput" onchange="updateCreatorCanvas()">
+              <select class="select-field" id="creatorBGInput" onchange="selectCreatorBgTheme(this.value)">
                 <option value="midnight">Midnight Dark</option>
                 <option value="slate">Matte Slate Grey</option>
                 <option value="ultra">Ultra Blue</option>
@@ -2187,9 +2210,28 @@
             </div>
           </div>
 
+          <!-- Custom Background Image Upload (ties into Inspiration Gallery) -->
+          <div class="input-group">
+            <label class="input-label">Custom Background Image</label>
+            <input type="file" id="creatorBgImageInput" accept="image/*" onchange="handleCreatorBgUpload(this)" style="font-size:0.78rem; padding:4px;">
+            <button class="btn btn-xs btn-outline mt-xs" onclick="clearCreatorBgImage()" style="font-size:0.7rem;">Clear Custom BG</button>
+
+            <div style="margin-top:6px;">
+              <div class="text-xs text-muted" style="margin-bottom:3px;">Quick backgrounds from Inspiration Gallery:</div>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                <img src="revolut_ultra.jpg" style="width:42px;height:28px;object-fit:cover;border:1px solid #444;border-radius:2px;cursor:pointer;" onclick="setCreatorBackgroundImage('revolut_ultra.jpg')" title="Revolut Ultra">
+                <img src="summer_cashback_spain.jpg" style="width:42px;height:28px;object-fit:cover;border:1px solid #444;border-radius:2px;cursor:pointer;" onclick="setCreatorBackgroundImage('summer_cashback_spain.jpg')" title="Summer Cashback Spain">
+                <img src="metal_card_burning.jpg" style="width:42px;height:28px;object-fit:cover;border:1px solid #444;border-radius:2px;cursor:pointer;" onclick="setCreatorBackgroundImage('metal_card_burning.jpg')" title="Metal Card Burning">
+                <img src="audi_f1_reveal.jpg" style="width:42px;height:28px;object-fit:cover;border:1px solid #444;border-radius:2px;cursor:pointer;" onclick="setCreatorBackgroundImage('audi_f1_reveal.jpg')" title="Audi F1">
+                <img src="crypto_cashback.jpg" style="width:42px;height:28px;object-fit:cover;border:1px solid #444;border-radius:2px;cursor:pointer;" onclick="setCreatorBackgroundImage('crypto_cashback.jpg')" title="Crypto Cashback">
+                <img src="revolut_premium_card.jpg" style="width:42px;height:28px;object-fit:cover;border:1px solid #444;border-radius:2px;cursor:pointer;" onclick="setCreatorBackgroundImage('revolut_premium_card.jpg')" title="Premium Card">
+              </div>
+            </div>
+          </div>
+
           <div class="input-group">
             <label class="input-label">Product Logo</label>
-            <select class="select-field" id="creatorProductLogo">
+            <select class="select-field" id="creatorProductLogo" onchange="updateCreatorCanvas()">
               <option value="logo_wordmark_white.png">Main Wordmark White</option>
               <option value="logo_wordmark_black.png">Main Wordmark Black</option>
               <option value="logo_appicon_white.png">App Icon White</option>
@@ -2235,6 +2277,9 @@
             </button>
             <button class="btn btn-secondary" id="creatorAddToCamBtn" onclick="addCreatorAssetToCampaign()">
               <span class="btn-text">📁 Add to Campaign</span>
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="saveCreatorToInspiration()" style="font-size:0.7rem; padding:4px 8px;">
+              💡 To Gallery
             </button>
           </div>
 
@@ -2284,12 +2329,13 @@
       <!-- Version A -->
       <div class="card" style="padding:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div class="font-bold text-lime">Version A (Metal Animation)</div>
-          <span class="badge badge-lime">Creative Control</span>
+          <div class="font-bold text-lime">Version A</div>
+          <span class="badge badge-lime">Control</span>
+          <button class="btn btn-xs btn-outline" onclick="loadVariantFromLibrary('A')" style="font-size:0.65rem; padding:1px 6px;">📁 From Library</button>
         </div>
         <div style="width:100%; height:260px; background:rgba(0,0,0,0.5) url('bg_highdef.jpg') no-repeat center center; background-size:cover; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; gap:8px;">
           <span style="font-size:2rem;">💳</span>
-          <textarea class="input-field font-mono text-xs" style="margin:0; width:90%; resize:none; background:rgba(0,0,0,0.7); border-color:rgba(255,255,255,0.15);" rows="3" placeholder="Enter Variant A details (headline/brief)...">Upgrade Your Financial Power. Metal card • Unlimited transfers • Premium cashback.</textarea>
+          <textarea class="input-field font-mono text-xs" style="margin:0; width:90%; resize:none; background:rgba(0,0,0,0.7); border-color:rgba(255,255,255,0.15);" rows="3" placeholder="Enter Variant A details (headline/brief)..." id="abTextA">Upgrade Your Financial Power. Metal card • Unlimited transfers • Premium cashback.</textarea>
         </div>
         <div class="grid-2 mt-md">
           <div>
@@ -2305,6 +2351,7 @@
           <button class="btn btn-sm btn-outline" style="flex:1;" onclick="voteAB('A', true)">👍 Like (A)</button>
           <button class="btn btn-sm btn-outline" style="flex:1;" onclick="voteAB('A', false)">👎 Dislike (A)</button>
         </div>
+        <div class="text-xs text-muted mt-sm">Votes: 👍 <span id="abVotesALikes">0</span>  👎 <span id="abVotesADislikes">0</span></div>
       </div>
       
       <!-- Divider Badge -->
@@ -2316,12 +2363,13 @@
       <!-- Version B -->
       <div class="card" style="padding:16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <div class="font-bold text-blue">Version B (Carousel Layout)</div>
+          <div class="font-bold text-blue">Version B</div>
           <span class="badge badge-blue">Challenger</span>
+          <button class="btn btn-xs btn-outline" onclick="loadVariantFromLibrary('B')" style="font-size:0.65rem; padding:1px 6px;">📁 From Library</button>
         </div>
         <div style="width:100%; height:260px; background:rgba(0,0,0,0.5) url('bg_highdef.jpg') no-repeat center center; background-size:cover; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; gap:8px;">
           <span style="font-size:2rem;">📱</span>
-          <textarea class="input-field font-mono text-xs" style="margin:0; width:90%; resize:none; background:rgba(0,0,0,0.7); border-color:rgba(255,255,255,0.15);" rows="3" placeholder="Enter Variant B details (headline/brief)...">Potenzia Il Tuo Potere Finanziario. Carta di metallo premium • Trasferimenti gratuiti.</textarea>
+          <textarea class="input-field font-mono text-xs" style="margin:0; width:90%; resize:none; background:rgba(0,0,0,0.7); border-color:rgba(255,255,255,0.15);" rows="3" placeholder="Enter Variant B details (headline/brief)..." id="abTextB">Unlock Elite Benefits Today. Premium metal card with 1% cashback + airport access.</textarea>
         </div>
         <div class="grid-2 mt-md">
           <div>
@@ -2337,6 +2385,7 @@
           <button class="btn btn-sm btn-outline" style="flex:1;" onclick="voteAB('B', true)">👍 Like (B)</button>
           <button class="btn btn-sm btn-outline" style="flex:1;" onclick="voteAB('B', false)">👎 Dislike (B)</button>
         </div>
+        <div class="text-xs text-muted mt-sm">Votes: 👍 <span id="abVotesBLikes">0</span>  👎 <span id="abVotesBDislikes">0</span></div>
       </div>
     </div>
     
@@ -2408,9 +2457,11 @@
           </tr>
         </tbody>
       </table>
-      <div class="flex mt-md">
-        <button class="btn btn-primary" style="margin-left:auto;" onclick="showToast('Winner declared and deployed to Spain and UK!', 'success')">🏆 Declare Winner & Deploy</button>
+      <div class="flex mt-md" style="align-items:center; gap:12px;">
+        <div id="abWinnerSummary" class="text-sm text-muted" style="flex:1;">Run simulation or vote to determine winner.</div>
+        <button class="btn btn-primary" onclick="declareWinnerAndDeploy()">🏆 Declare Winner & Deploy</button>
       </div>
+      <div class="text-xs text-muted mt-xs">Winner will be added to Campaign Library as "Live" with full creative details.</div>
     </div>
   </section>
 
@@ -2609,6 +2660,17 @@
       </div>
     </div>
     
+    <!-- Market Selector -->
+    <div class="card" style="margin-bottom:12px; padding:12px;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <label class="text-sm font-bold">Select Market:</label>
+        <select id="analyticsMarketSelect" class="select-field" style="min-width:220px;" onchange="updateAnalyticsForMarket(this.value)">
+          <!-- Populated dynamically from targetMarketsData -->
+        </select>
+        <span class="text-xs text-muted" id="analyticsMarketInfo"></span>
+      </div>
+    </div>
+
     <div class="grid-2 mt-md">
       <!-- Graphical Chart -->
       <div class="card">
@@ -2625,25 +2687,22 @@
         </div>
       </div>
       
-      <!-- Spain Localisation Heatmap -->
+      <!-- Market Heatmap -->
       <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
         <div>
-          <div class="card-title text-sm"><span class="icon">🇪🇸</span> Spain Market Heatmap</div>
-          <div style="padding:12px; background:rgba(255,255,255,0.02); border:1px solid var(--border-default); border-radius:8px; font-size:0.8rem; margin-top:16px;">
-            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border-default);"><span>Madrid</span><span class="text-lime font-bold">5.1% CTR</span></div>
-            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border-default);"><span>Barcelona</span><span class="text-lime font-bold">4.8% CTR</span></div>
-            <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border-default);"><span>Alicante</span><span class="text-lime font-bold">4.6% CTR</span></div>
-            <div style="display:flex; justify-content:space-between; padding:4px 0;"><span>Seville</span><span class="text-blue font-bold">3.9% CTR</span></div>
+          <div class="card-title text-sm" id="analyticsHeatmapTitle"><span class="icon">🇪🇸</span> Spain Market Heatmap</div>
+          <div id="analyticsHeatmapContent" style="padding:12px; background:rgba(255,255,255,0.02); border:1px solid var(--border-default); border-radius:8px; font-size:0.8rem; margin-top:16px;">
+            <!-- Populated by JS -->
           </div>
         </div>
-        <div class="text-xs text-muted mt-md">Highest response rate detected on vertical formats (1080×1920).</div>
+        <div class="text-xs text-muted mt-md" id="analyticsHeatmapFooter">Highest response rate detected on vertical formats (1080×1920).</div>
       </div>
     </div>
     
     <!-- AI Insights Box -->
     <div class="card mt-md" style="background:rgba(0, 212, 170, 0.04); border-color:var(--accent-teal-dim);">
-      <div class="text-sm font-bold text-lime"><span class="icon">💡</span> AI Audience Insights for Spain</div>
-      <div class="text-sm text-secondary mt-sm" style="line-height:1.5;">
+      <div class="text-sm font-bold text-lime" id="analyticsInsightsTitle"><span class="icon">💡</span> AI Audience Insights for Spain</div>
+      <div class="text-sm text-secondary mt-sm" style="line-height:1.5;" id="analyticsInsightsContent">
         Spain audience demonstrates an extreme preference towards **metal card animations** (+41% engagement over static images). We suggest allocating 80% of the active Spain ad-budgets to 6-second vertical videos.
       </div>
     </div>
@@ -3540,7 +3599,7 @@
       <div class="tm-dash-card">
         <div class="tm-dash-icon" style="background:rgba(163,230,53,0.12); color:#a3e635;">📊</div>
         <div>
-          <div class="tm-dash-value" id="tmTotalCustomers">50M+</div>
+          <div class="tm-dash-value" id="tmTotalCustomers">75M+</div>
           <div class="tm-dash-label">Global Customers</div>
         </div>
       </div>
@@ -3678,52 +3737,97 @@
 </div>
 </div>
 
-  <!-- ── New Campaign Modal ── -->
+  <!-- ── New Campaign Modal ── (Professional Comprehensive Form) -->
   <div id="newCampaignModal" class="modal">
-    <div class="modal-content">
-      <div class="card-title text-md" style="margin-bottom:16px;"><span class="icon">📁</span> Create New Campaign</div>
-      <div class="input-group">
-        <label class="input-label" for="campaignNameInput">Campaign Name</label>
-        <input type="text" class="input-field" id="campaignNameInput" placeholder="e.g. Spain Travel cashback">
+    <div class="modal-content" style="width: 620px; max-width: 94%;">
+      <div class="card-title text-md" style="margin-bottom:12px;"><span class="icon">📁</span> Create New Campaign</div>
+      <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:14px;">Comprehensive campaign setup. All fields are saved and used in the detail view.</div>
+
+      <div class="grid-2" style="gap:12px 16px;">
+        <div class="input-group">
+          <label class="input-label" for="campaignNameInput">Campaign Name *</label>
+          <input type="text" class="input-field" id="campaignNameInput" placeholder="Q3 Metal Card Acquisition">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="campaignStatusInput">Status</label>
+          <select class="select-field" id="campaignStatusInput">
+            <option value="Draft">Draft</option>
+            <option value="Review">Review</option>
+            <option value="Approved">Approved</option>
+            <option value="Live">Live</option>
+            <option value="Paused">Paused</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="campaignMarketInput">Primary Market</label>
+          <select class="select-field" id="campaignMarketInput">
+            <option value="UK">🇬🇧 United Kingdom (UK)</option>
+            <option value="US">🇺🇸 United States (US)</option>
+            <option value="ES">🇪🇸 Spain (ES)</option>
+            <option value="MX">🇲🇽 Mexico (MX)</option>
+            <option value="FR">🇫🇷 France (FR)</option>
+            <option value="DE">🇩🇪 Germany (DE)</option>
+            <option value="PT_PT">🇵🇹 Portugal (PT-PT)</option>
+            <option value="PT_BR">🇧🇷 Brazil (PT-BR)</option>
+            <option value="BG">🇧🇬 Bulgaria (BG)</option>
+            <option value="HR">🇭🇷 Croatia (HR)</option>
+            <option value="CS">🇨🇿 Czech Republic (CS)</option>
+            <option value="DA">🇩🇰 Denmark (DA)</option>
+            <option value="NL">🇳🇱 Netherlands (NL)</option>
+            <option value="EL">🇬🇷 Greece (EL)</option>
+            <option value="HU">🇭🇺 Hungary (HU)</option>
+            <option value="IT">🇮🇹 Italy (IT)</option>
+            <option value="JA">🇯🇵 Japan (JA)</option>
+            <option value="LV">🇱🇻 Latvia (LV)</option>
+            <option value="LT">🇱🇹 Lithuania (LT)</option>
+            <option value="NO">🇳🇴 Norway (NO)</option>
+            <option value="PL">🇵🇱 Poland (PL)</option>
+            <option value="RO">🇷🇴 Romania (RO)</option>
+            <option value="RU">🇷🇺 Russia (RU)</option>
+            <option value="SK">🇸🇰 Slovakia (SK)</option>
+            <option value="SV">🇸🇪 Sweden (SV)</option>
+            <option value="UA">🇺🇦 Ukraine (UA)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="campaignBudgetInput">Budget (€)</label>
+          <input type="number" class="input-field" id="campaignBudgetInput" placeholder="45000" step="1000">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="campaignStartInput">Start Date</label>
+          <input type="date" class="input-field" id="campaignStartInput">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="campaignEndInput">End Date</label>
+          <input type="date" class="input-field" id="campaignEndInput">
+        </div>
+
+        <div class="input-group" style="grid-column:1 / -1;">
+          <label class="input-label" for="campaignBriefInput">Creative Brief / Direction</label>
+          <textarea class="input-field" id="campaignBriefInput" rows="2" placeholder="Key messaging, tone, hero assets..."></textarea>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label" for="campaignChannelsInput">Channels / Formats (comma sep.)</label>
+          <input type="text" class="input-field" id="campaignChannelsInput" placeholder="story,social,banner,video">
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="campaignAudienceInput">Target Audience</label>
+          <input type="text" class="input-field" id="campaignAudienceInput" placeholder="Urban professionals 25-40">
+        </div>
+
+        <div class="input-group" style="grid-column:1 / -1;">
+          <label class="input-label" for="campaignGoalInput">Primary Goal / KPI</label>
+          <input type="text" class="input-field" id="campaignGoalInput" placeholder="e.g. +18% metal card sign-ups">
+        </div>
       </div>
-      <div class="input-group">
-        <label class="input-label" for="campaignMarketInput">Target Market</label>
-        <select class="select-field" id="campaignMarketInput">
-          <option value="UK">🇬🇧 United Kingdom (UK)</option>
-          <option value="US">🇺🇸 United States (US)</option>
-          <option value="ES">🇪🇸 Spain (ES)</option>
-          <option value="MX">🇲🇽 Mexico (MX)</option>
-          <option value="FR">🇫🇷 France (FR)</option>
-          <option value="DE">🇩🇪 Germany (DE)</option>
-          <option value="PT_PT">🇵🇹 Portugal (PT-PT)</option>
-          <option value="PT_BR">🇧🇷 Brazil (PT-BR)</option>
-          <option value="BG">🇧🇬 Bulgaria (BG)</option>
-          <option value="HR">🇭🇷 Croatia (HR)</option>
-          <option value="CS">🇨🇿 Czech Republic (CS)</option>
-          <option value="DA">🇩🇰 Denmark (DA)</option>
-          <option value="NL">🇳🇱 Netherlands (NL)</option>
-          <option value="EL">🇬🇷 Greece (EL)</option>
-          <option value="HU">🇭🇺 Hungary (HU)</option>
-          <option value="IT">🇮🇹 Italy (IT)</option>
-          <option value="JA">🇯🇵 Japan (JA)</option>
-          <option value="LV">🇱🇻 Latvia (LV)</option>
-          <option value="LT">🇱🇹 Lithuania (LT)</option>
-          <option value="NO">🇳🇴 Norway (NO)</option>
-          <option value="PL">🇵🇱 Poland (PL)</option>
-          <option value="RO">🇷🇴 Romania (RO)</option>
-          <option value="RU">🇷🇺 Russia (RU)</option>
-          <option value="SK">🇸🇰 Slovakia (SK)</option>
-          <option value="SV">🇸🇪 Sweden (SV)</option>
-          <option value="UA">🇺🇦 Ukraine (UA)</option>
-        </select>
-      </div>
-      <div class="input-group">
-        <label class="input-label" for="campaignDateInput">Launch Date</label>
-        <input type="date" class="input-field" id="campaignDateInput" value="2026-07-01">
-      </div>
+
       <div class="flex gap-sm mt-lg" style="justify-content:flex-end;">
         <button class="btn btn-secondary" onclick="closeNewCampaignModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitNewCampaign()">Create Campaign</button>
+        <button class="btn btn-primary" onclick="submitNewCampaign()">🚀 Create Campaign</button>
       </div>
     </div>
   </div>
@@ -3741,6 +3845,16 @@
       <div class="flex gap-sm mt-lg" style="justify-content:flex-end;">
         <button class="btn btn-secondary" onclick="closeAddToCampaignModal()">Cancel</button>
         <button class="btn btn-primary" onclick="submitAddToCampaign()">Add to Campaign</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Professional Campaign Detail Modal (replaces ugly alert) ── -->
+  <div id="campaignDetailModal" class="modal">
+    <div class="modal-content" style="width: 780px; max-width: 96%; padding: 20px;">
+      <!-- Populated dynamically by showCampaignDetail() -->
+      <div id="campaignDetailBody">
+        <!-- JS injected rich content here -->
       </div>
     </div>
   </div>

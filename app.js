@@ -66,21 +66,6 @@ function updateModeUI() {
     geniusStatus.style.display = isGenius ? 'inline' : 'none';
   }
 
-  // Section badges
-  const genBadge = document.getElementById('genProviderBadge');
-  if (genBadge) {
-    if (isGenius) {
-      const short = { grok: 'Grok xAI', gemini: 'Gemini', claude: 'Claude', chatgpt: 'ChatGPT' }[ai] || 'Grok xAI';
-      genBadge.textContent = short;
-      genBadge.className = 'badge ' + ((ai === 'gemini') ? 'badge-blue' : 'badge-lime');
-    } else {
-      genBadge.textContent = 'Simulated';
-      genBadge.className = 'badge badge-lime';
-    }
-  }
-  const assetG = document.getElementById('assetGeniusBadge');
-  if (assetG) assetG.style.display = isGenius ? 'inline' : 'none';
-
   // API key field (optional for real AIs, hidden for sim)
   if (apiKeyField) {
     apiKeyField.style.display = (isGenius && ai !== 'grok') ? 'flex' : 'none';
@@ -184,14 +169,9 @@ marketSelect.addEventListener('change', function () {
   showToast(`🌍 Target market changed to ${country}`, 'info');
 });
 
-// ── Asset Format Change — update size live ──
+// ── Asset Format Change — no auto-generate; only on button press ──
 const formatSelect = document.getElementById('assetFormat');
-if (formatSelect) {
-  formatSelect.addEventListener('change', function () {
-    // Regenerate asset on format change regardless of prior generation
-    generateAsset();
-  });
-}
+// Format change now only affects the next manual generate; no auto-regen here.
 
 // ── Test Connection ──
 function testConnection() {
@@ -456,6 +436,39 @@ const localisedContent = {
   },
 };
 
+// Short body versions for asset preview (translated short style for consistency with Creator Tool)
+const shortBody = {
+  UK: 'Metal card • Unlimited transfers • Premium cashback',
+  US: 'Metal card • Unlimited transfers • Premium cashback',
+  EN: 'Metal card • Unlimited transfers • Premium cashback',
+  ES: 'Tarjeta metálica premium • Transferencias ilimitadas sin comisiones • Cashback exclusivo en todas tus compras.',
+  MX: 'Tarjeta metálica premium • Transferencias ilimitadas sin comisiones • Cashback exclusivo en tus compras.',
+  FR: 'Carte métal premium • Transferts illimités sans frais • Cashback exclusif sur tous vos achats.',
+  DE: 'Premium-Metallkarte • Unbegrenzte gebührenfreie Überweisungen • Exklusives Cashback bei jedem Einkauf.',
+  PT_PT: 'Cartão metálico premium • Transferências ilimitadas sem taxas • Cashback exclusivo em todas as compras.',
+  PT_BR: 'Cartão de metal premium • Transferências internacionais ilimitadas sem taxas • Cashback exclusivo em todas as compras.',
+  PT: 'Cartão metálico premium • Transferências ilimitadas sem taxas • Cashback exclusivo em todas as compras.',
+  BG: 'Премиум метална карта • Неограничени безплатни трансфери • Ексклузивен кешбек при всяка покупка.',
+  HR: 'Premium metalna kartica • Neograničeni besplatni prijenosi • Ekskluzivni povrat novca pri svakoj kupnji.',
+  CS: 'Prémiová kovová karta • Neomezené převody bez poplatků • Exkluzivní cashback z každého nákupu.',
+  DA: 'Premium metalkort • Ubegrænsede gebyrfrie overførsler • Eksklusiv cashback på alle køb.',
+  NL: 'Premium metalen kaart • Onbeperkte gratis overschrijvingen • Exclusieve cashback op elke aankoop.',
+  EL: 'Premium μεταλλική κάρτα • Απεριόριστες δωρεάν μεταφορές • Αποκλειστικό cashback σε κάθε αγορά.',
+  HU: 'Prémium fémkártya • Korlátlan díjmentes utalások • Exkluzív pénzvisszafizetés minden vásárlás után.',
+  IT: 'Carta di metallo premium • Trasferimenti gratuiti illimitati • Cashback esclusivo su ogni acquisto.',
+  JA: 'プレミアムメタルカード • 手数料無料の海外送金が使い放題 • すべてのお買い物で限定キャッシュバック。',
+  LV: 'Premium metāla karte • Neierobežoti bezmaksas pārskaitījumi • Ekskluzīva naudas atmaksa par katru pirkumu.',
+  LT: 'Premium metalinė kortelė • Neriboti nemokami pervedimai • Išskirtinis pinigų grąžinimas už kiekvieną pirkinį.',
+  NO: 'Premium metallkort • Ubegrensede gebyrfrie overføringer • Eksklusiv cashback på alle kjøp.',
+  PL: 'Karta metalowa Premium • Nielimitowane bezpłatne przelewy • Ekskluzywny cashback za każdy zakup.',
+  RO: 'Card metalic premium • Transferuri nelimitate fără comision • Cashback exclusiv la fiecare achiziție.',
+  RU: 'Премиальная металлическая карта • Безлимитные переводы без комиссий • Эксклюзивный кэшбэк с каждой покупки.',
+  SK: 'Prémiová kovová karta • Neobmedzené prevody bez poplatků • Exkluzívny cashback z každého nákupu.',
+  SV: 'Premium metalkort • Obegränsade avgiftsfria överföringar • Exklusiv cashback på alla köp.',
+  UA: 'Преміальна металева картка • Безлімітні перекази без комісій • Ексклюзивний кешбек за кожну покупку.',
+  LATAM: 'Tarjeta metálica premium • Transferencias internacionales sin comisiones • Cashback en cada compra.',
+};
+
 function generateAsset() {
   const btn = document.getElementById('generateBtn');
   const output = document.getElementById('assetOutput');
@@ -495,49 +508,26 @@ function generateAsset() {
     let sizeStyles = getSizeStyles(format);
     let contentHTML = '';
 
-    // In simulated mode, always use the clean original preview text (not the brief)
-    // In Genius mode, allow custom text from the prompt
-    let displayHeadline = 'Upgrade Your Financial Power';
-    let displayBody = 'Metal Card Unlimited Transfers Premium Cash backs';
+    let displayHeadline = locale.headline;
+    let displayBody = shortBody[market] || locale.body;
     let displayCta = locale.cta;
     let displayDisclaimer = locale.disclaimer;
 
-    const isGenius = isGeniusMode();
-    if (isGenius && prompt.length > 70) {
-      // Genius mode: use the pasted brief to create custom display text for the preview
-      let custom = prompt.trim()
-        .replace(/^(Create a single,|A cinematic,|High-end premium|You are a world-class|Ultra-premium cinematic|Ultra-premium cinematic marketing visual).*?(Revolut|campaign)\.?\s*/i, '') // strip any meta or direct prompt wrapper
-        .replace(/^(Ultra-premium| Cinematic|Centerpiece:).*?card.*?gradient\.?\s*/i, '')
-        .replace(/^["'`]+|["'`]+$/g, '')
-        .trim();
-
-      const sentences = custom.split(/[.!?]\s+/).map(s => s.trim()).filter(s => s.length > 4);
-      if (sentences.length > 0) {
-        displayHeadline = sentences[0].substring(0, 82).replace(/^[a-z]/, c => c.toUpperCase());
-      } else {
-        displayHeadline = custom.substring(0, 70);
-      }
-      if (!/[.!?…]$/.test(displayHeadline)) displayHeadline += '…';
-
-      // If the extracted headline is still photo-description-heavy, synthesize a punchier offer headline from keywords in the pasted prompt
-      const kw = prompt.toLowerCase();
-      if (/cashback/.test(kw) && displayHeadline.length < 25) {
-        displayHeadline = 'Premium Metal Card. Real Cashback.';
-      } else if (/crypto/.test(kw) && !/cashback/.test(kw)) {
-        displayHeadline = displayHeadline.length > 30 ? displayHeadline : 'Crypto Freedom. Metal Card Power.';
-      } else if (/metal card|premium card/.test(kw)) {
-        displayHeadline = displayHeadline.length > 35 ? displayHeadline : 'Elevate to Metal.';
-      }
-
-      // Body uses the next 1-2 sentences or a condensed chunk of the prompt for good ad copy length
-      const rest = sentences.slice(1).join('. ');
-      displayBody = (rest || custom.substring(60, 260)).substring(0, 220).trim();
-      if (displayBody && !/[.!?…]$/.test(displayBody)) displayBody += '.';
-      if (!displayBody) displayBody = custom.substring(30, 200);
-    }
-
     // Helper for consistent logo rendering
-    const logoStyle = `height:auto; max-height: ${format === 'banner' ? '32px' : format === 'email' ? '28px' : '38px'}; width:auto; object-fit:contain; flex-shrink:0;`;
+    const isBigLogo = logoFile.includes('wordmark') || logoFile.includes('business');
+    let logoMaxHeight;
+    if (isBigLogo) {
+      if (format === 'banner') logoMaxHeight = '42px';
+      else if (format === 'email') logoMaxHeight = '38px';
+      else if (format === 'video') logoMaxHeight = '26px';
+      else logoMaxHeight = '50px';
+    } else {
+      if (format === 'banner') logoMaxHeight = '26px';
+      else if (format === 'email') logoMaxHeight = '24px';
+      else if (format === 'video') logoMaxHeight = '18px';
+      else logoMaxHeight = '38px';
+    }
+    const logoStyle = `height:auto; max-height: ${logoMaxHeight}; width:auto; object-fit:contain; flex-shrink:0;`;
 
     if (format === 'story') {
       // Story is already excellent — keep close to original but add safety
@@ -559,7 +549,7 @@ function generateAsset() {
       // Horizontal banner — extremely constrained height
       contentHTML = `
         <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0; overflow:hidden;">
-          <img src="${logoFile}?v=${Date.now()}" style="${logoStyle} max-height:26px;" alt="Logo" onerror="this.style.display='none'" />
+          <img src="${logoFile}?v=${Date.now()}" style="${logoStyle}" alt="Logo" onerror="this.style.display='none'" />
           <div style="flex:1; min-width:0; overflow:hidden;">
             <div style="font-size:13px; font-weight:800; color:#fff; line-height:1.05; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${displayHeadline}</div>
             <div style="font-size:10px; color:#a8b1c0; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.1;">${displayBody}</div>
@@ -578,7 +568,7 @@ function generateAsset() {
             <div style="font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--accent-lime); font-weight:700; margin-bottom:2px;">Revolut Premium</div>
             <div style="font-size:17px; font-weight:800; color:#fff; line-height:1.15;">${displayHeadline}</div>
           </div>
-          <img src="${logoFile}?v=${Date.now()}" style="${logoStyle} max-height:24px;" alt="Logo" onerror="this.style.display='none'" />
+          <img src="${logoFile}?v=${Date.now()}" style="${logoStyle}" alt="Logo" onerror="this.style.display='none'" />
         </div>
         <div style="font-size:12px; color:#b8c0d0; line-height:1.35; margin:4px 0 6px;">${displayBody}</div>
         <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.1); padding-top:8px;">
@@ -590,7 +580,7 @@ function generateAsset() {
       contentHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">
           <div style="font-size:11px; color:var(--accent-lime); font-weight:700; letter-spacing:0.5px;">VIDEO SCRIPT • 15s</div>
-          <img src="${logoFile}?v=${Date.now()}" style="${logoStyle} max-height:18px;" alt="Logo" onerror="this.style.display='none'" />
+          <img src="${logoFile}?v=${Date.now()}" style="${logoStyle}" alt="Logo" onerror="this.style.display='none'" />
         </div>
         <div style="flex:1; display:flex; align-items:center; padding:6px 0;">
           <div style="font-size:13px; color:#c5d0e0; line-height:1.4;">
@@ -635,9 +625,12 @@ function generateAsset() {
         </div>
         <div class="text-xs font-mono text-muted">ID: GRV-${Date.now().toString(36).toUpperCase()}</div>
       </div>
+      <div class="flex gap-xs mt-sm" style="justify-content:flex-end;">
+        <button class="btn btn-xs btn-outline" onclick="addCurrentGenerationToGallery()">💡 Add to Inspiration Gallery</button>
+      </div>
     `;
 
-    // Store last generated data for fast high-quality export — prefer custom/GENIUS-derived text when present
+    // Store last generated data for fast high-quality export (always uses clean standard preview text)
     window.lastCreative = {
       headline: displayHeadline,
       body: displayBody,
@@ -655,18 +648,12 @@ function generateAsset() {
       const geniusDiv = document.createElement('div');
       geniusDiv.style.cssText = 'margin-top:10px; padding:8px 10px; background:#0a0f1a; border:1px solid #334; border-radius:6px; font-size:0.72rem;';
       geniusDiv.innerHTML = `
-        <div style="color:#b8f03e; font-weight:700; font-size:0.65rem;">GENIUS — Real Grok Imagine Prompt</div>
+        <div style="color:#b8f03e; font-weight:700; font-size:0.65rem;">GENIUS — Real API Prompt</div>
         <textarea style="width:100%; margin:6px 0; background:#111; color:#ddd; font-size:0.7rem; border:1px solid #444;" rows="3">${geniusPrompt}</textarea>
-        <button onclick="navigator.clipboard.writeText(this.parentNode.querySelector('textarea').value); showToast('Copied for Grok Imagine', 'success')" class="btn btn-sm btn-outline" style="font-size:0.65rem; padding:2px 8px;">📋 Copy for Grok Imagine</button>
-        <div style="font-size:0.6rem; color:#666; margin-top:4px;">When connected to Grok, this prompt would generate the actual image via Grok Imagine.</div>
+        <button onclick="navigator.clipboard.writeText(this.parentNode.querySelector('textarea').value); showToast('Copied for real API', 'success')" class="btn btn-sm btn-outline" style="font-size:0.65rem; padding:2px 8px;">📋 Copy for real API</button>
+        <div style="font-size:0.6rem; color:#666; margin-top:4px;">When connected to a real API, this prompt would generate the actual image via real API.</div>
       `;
       output.appendChild(geniusDiv);
-
-      const gBadge = document.getElementById('assetGeniusBadge');
-      if (gBadge) gBadge.style.display = 'inline';
-    } else {
-      const gBadge = document.getElementById('assetGeniusBadge');
-      if (gBadge) gBadge.style.display = 'none';
     }
 
     // Enable iterate
@@ -2001,6 +1988,187 @@ function searchGallery(query) {
   });
 }
 
+function saveVisibleGalleryToLibrary() {
+  const container = document.getElementById('galleryGrid');
+  if (!container) return;
+
+  const visibleCards = Array.from(container.querySelectorAll('.mockup-card')).filter(c => c.style.display !== 'none');
+  if (visibleCards.length === 0) {
+    showToast('No visible gallery items to save.', 'warning');
+    return;
+  }
+
+  const camps = getCampaigns();
+
+  let added = 0;
+  visibleCards.forEach(card => {
+    const titleEl = card.querySelector('.mockup-title');
+    const tagsEl = card.querySelector('.mockup-tags');
+    const title = titleEl ? titleEl.textContent.trim() : 'Untitled Inspiration';
+    const tagsText = tagsEl ? tagsEl.textContent.trim() : '';
+    const cats = (card.getAttribute('data-category') || '').split(' ').filter(Boolean);
+    const market = cats.includes('spain') ? 'ES' : cats.includes('web3') ? 'Multi' : 'UK';
+
+    // Avoid exact duplicates
+    if (camps.some(c => c.name === title)) return;
+
+    let imageSrc = '';
+    const img = card.querySelector('.mockup-media img');
+    if (img) {
+      imageSrc = img.getAttribute('src') || '';
+      if (imageSrc.includes('/')) imageSrc = imageSrc.split('/').pop();
+    }
+
+    const newCamp = {
+      id: 'GRV-' + Date.now().toString(36).toUpperCase() + '-' + added,
+      name: title,
+      market: market,
+      status: 'Draft',
+      assets: imageSrc ? [imageSrc] : (tagsText ? [tagsText] : []),
+      created: new Date().toISOString().split('T')[0],
+      prompt: `Inspired by gallery item: ${title}. Tags: ${tagsText}`,
+      views: 0, ctr: 0, conversions: 0,
+      source: 'inspiration-gallery',
+      image: imageSrc
+    };
+    camps.unshift(newCamp);
+    added++;
+  });
+
+  if (added > 0) {
+    setCampaigns(camps);
+    renderCampaigns();
+    showToast(`Saved ${added} item(s) to Campaign Library!`, 'success');
+    setTimeout(() => switchTab('campaigns'), 600);
+  } else {
+    showToast('These items are already in the Campaign Library.', 'info');
+  }
+}
+
+function saveGalleryCardToLibrary(btnOrCard) {
+  let card = null;
+  if (btnOrCard && btnOrCard.closest) {
+    card = btnOrCard.closest('.mockup-card');
+  } else if (btnOrCard && btnOrCard.classList && btnOrCard.classList.contains('mockup-card')) {
+    card = btnOrCard;
+  }
+  if (!card) {
+    showToast('Could not find card', 'warning');
+    return;
+  }
+
+  const titleEl = card.querySelector('.mockup-title');
+  const tagsEl = card.querySelector('.mockup-tags');
+  const title = titleEl ? titleEl.textContent.trim() : 'Untitled Inspiration';
+  const tagsText = tagsEl ? tagsEl.textContent.trim() : '';
+  const cats = (card.getAttribute('data-category') || '').split(' ').filter(Boolean);
+  const market = cats.includes('spain') ? 'ES' : cats.includes('web3') ? 'Multi' : 'UK';
+
+  let imageSrc = '';
+  const img = card.querySelector('.mockup-media img');
+  if (img) {
+    imageSrc = img.getAttribute('src') || '';
+    if (imageSrc.includes('/')) imageSrc = imageSrc.split('/').pop();
+  }
+
+  const camps = getCampaigns();
+
+  if (camps.some(c => c.name === title)) {
+    showToast('Already saved to library', 'info');
+    switchTab('campaigns');
+    return;
+  }
+
+  const newCamp = {
+    id: 'GRV-' + Date.now().toString(36).toUpperCase(),
+    name: title,
+    market: market,
+    status: 'Draft',
+    assets: imageSrc ? [imageSrc] : (tagsText ? [tagsText] : []),
+    created: new Date().toISOString().split('T')[0],
+    prompt: `Inspired by gallery item: ${title}. Tags: ${tagsText}`,
+    views: 0, ctr: 0, conversions: 0,
+    source: 'inspiration-gallery',
+    image: imageSrc
+  };
+
+  camps.unshift(newCamp);
+  setCampaigns(camps);
+  renderCampaigns();
+  showToast(`Saved "${title}" to Campaign Library`, 'success');
+  setTimeout(() => switchTab('campaigns'), 500);
+}
+
+// Add current Asset Generator result to the Inspiration Gallery (dynamic)
+function addToInspirationGallery(title, category, tags, icon = '✨', logo = 'logo_wordmark_white.png') {
+  const grid = document.getElementById('galleryGrid');
+  if (!grid) return;
+
+  const safeTitle = (title || 'New Inspiration').replace(/'/g, "\\'");
+  const safeTags = (tags || '').replace(/'/g, "\\'");
+
+  const card = document.createElement('div');
+  card.className = 'mockup-card';
+  card.setAttribute('data-category', category || 'static');
+
+  card.innerHTML = `
+    <div class="mockup-media">
+      <div style="font-size:2rem;">${icon}</div>
+      <div class="mockup-overlay">
+        <button class="btn btn-sm btn-primary" onclick="remixTemplate('${safeTitle}', '${safeTags}', '${logo}')">Remix</button>
+        <button class="btn btn-sm btn-secondary" onclick="openAddToCampaignModal('${safeTitle.replace(/\s+/g,'_')}.png')">Use in Campaign</button>
+        <button class="btn btn-xs btn-outline" onclick="saveGalleryCardToLibrary(this)" style="margin-top:4px; font-size:0.65rem; padding:2px 6px;">💾 Save to Library</button>
+      </div>
+    </div>
+    <div class="mockup-details">
+      <div class="mockup-title">${title || 'New Inspiration'}</div>
+      <div class="mockup-tags">
+        ${(tags || '').split('•').map(t => `<span class="mockup-tag">${t.trim()}</span>`).join('')}
+      </div>
+    </div>
+  `;
+
+  grid.appendChild(card);
+  showToast('Added to Inspiration Gallery!', 'success');
+
+  // Optionally auto-filter to show it
+  setTimeout(() => filterGallery('all'), 300);
+}
+
+function addCurrentGenerationToGallery() {
+  if (!window.lastCreative) {
+    showToast('Generate an asset first.', 'warning');
+    return;
+  }
+
+  const title = window.lastCreative.headline || 'New Generated Asset';
+  const format = window.lastCreative.format || 'static';
+  const market = document.getElementById('targetMarket') ? document.getElementById('targetMarket').value : 'UK';
+  const category = `${format} ${market.toLowerCase()}`;
+
+  const tags = `${format} • ${market} • Generated`;
+  const icon = format === 'video' ? '🎥' : format === 'story' ? '📱' : '🖼️';
+
+  // Use current logo if available
+  const logo = window.lastCreative.logo || 'logo_wordmark_white.png';
+
+  addToInspirationGallery(title, category, tags, icon, logo);
+}
+
+// Add current Creator Tool preview as an inspiration item
+function saveCreatorToInspiration() {
+  const h = document.getElementById('creatorHeadlineInput')?.value || 'Creator Draft';
+  const s = document.getElementById('creatorSubtextInput')?.value || '';
+  const logoSel = document.getElementById('creatorProductLogo');
+  const logo = logoSel ? logoSel.value : 'logo_wordmark_white.png';
+
+  const title = h;
+  const tags = s || 'Creator Tool • Custom';
+  const category = 'static custom';
+
+  addToInspirationGallery(title, category, tags, '🖌️', logo);
+}
+
 // 3. Voice & Tone Lab
 const voiceProfiles = {
   confident: { confidence: 95, empathy: 40, urgency: 75, safety: 85, suggestion: '"Obtén lo que te mereces. Revolut Metal te devuelve hasta un 1.6% de cashback y te permite viajar sin límites de cambio de divisa los fines de semana. Eleva tu poder financiero."' },
@@ -2051,83 +2219,272 @@ function copyRewriteText() {
   showToast('📋 Copied to clipboard!', 'success');
 }
 
-// 4. A/B Test Studio
-let simInterval = null;
-function simulateABTest() {
-  if (simInterval) clearInterval(simInterval);
-  
-  const logDiv = document.getElementById('abSimLog');
-  logDiv.innerHTML = "Initializing simulated user traffic...<br>";
-  showToast('⚡ Running simulation on 10,000 virtual users...', 'info');
-  
-  let userCount = 0;
-  let clickA = 0;
-  let clickB = 0;
-  
-  simInterval = setInterval(() => {
-    userCount += 1000;
-    clickA += Math.floor(Math.random() * 52) + 20; // ~4.8% CTR
-    clickB += Math.floor(Math.random() * 41) + 15; // ~3.9% CTR
-    
-    const ctrA = ((clickA / userCount) * 100).toFixed(2);
-    const ctrB = ((clickB / userCount) * 100).toFixed(2);
-    
-    document.getElementById('predictedCtrA').textContent = ctrA + '%';
-    document.getElementById('predictedCtrB').textContent = ctrB + '%';
-    
-    // Append to log
-    logDiv.innerHTML += `Batch ${userCount/1000}: Processed ${userCount} users... (CTR A: ${ctrA}%, CTR B: ${ctrB}%)<br>`;
-    logDiv.scrollTop = logDiv.scrollHeight;
-    
-    // Mutate chart line path points
-    const pointsA = `0,80 50,60 100,50 150,${90 - ctrA*12} 200,${90 - ctrA*14} 250,${95 - ctrA*16} 300,${95 - ctrA*17}`;
-    const pointsB = `0,85 50,75 100,65 150,${90 - ctrB*11} 200,${90 - ctrB*12} 250,${95 - ctrB*13} 300,${95 - ctrB*14}`;
-    document.getElementById('ctrChartLineA').setAttribute('points', pointsA);
-    document.getElementById('ctrChartLineB').setAttribute('points', pointsB);
-    
-    if (userCount >= 10000) {
-      clearInterval(simInterval);
-      simInterval = null;
-      logDiv.innerHTML += `<span class="text-lime font-bold">Simulation complete. Winner: Version A (Confidence 99.4%)</span>`;
-      logDiv.scrollTop = logDiv.scrollHeight;
-      showToast('🏆 Simulation complete! Version A has won.', 'success');
+// ── Voice Playback using Web Speech API (browser built-in) ──
+let currentUtterance = null;
+let availableVoices = [];
+
+function populateVoiceSelect() {
+  const select = document.getElementById('voiceSelect');
+  if (!select) return;
+
+  // Get voices (some browsers load them asynchronously)
+  availableVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+
+  select.innerHTML = '<option value="">Default voice</option>';
+
+  availableVoices.forEach((voice, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${voice.name} (${voice.lang})`;
+    // Prefer Spanish or English voices for this demo
+    if (voice.lang.startsWith('es') || voice.lang.startsWith('en')) {
+      opt.textContent = '★ ' + opt.textContent;
     }
-  }, 300);
+    select.appendChild(opt);
+  });
+
+  if (availableVoices.length === 0) {
+    const opt = document.createElement('option');
+    opt.textContent = 'No voices found (browser may load them async)';
+    opt.disabled = true;
+    select.appendChild(opt);
+    // Retry once in case voices are still loading
+    setTimeout(() => {
+      if (document.getElementById('voiceSelect') && availableVoices.length === 0) {
+        populateVoiceSelect();
+      }
+    }, 600);
+  }
 }
+
+function getSelectedVoice() {
+  const select = document.getElementById('voiceSelect');
+  if (!select || !select.value || !availableVoices[select.value]) return null;
+  return availableVoices[select.value];
+}
+
+function getToneParamsForSpeech() {
+  // Read current sliders to influence speech
+  const conf = parseInt(document.getElementById('toneConfidence')?.value || 80);
+  const empathy = parseInt(document.getElementById('toneEmpathy')?.value || 60);
+  const urgency = parseInt(document.getElementById('toneUrgency')?.value || 50);
+
+  // Map to rate and pitch
+  let rate = 1.0;
+  let pitch = 1.0;
+
+  // Higher urgency + confidence → slightly faster, slightly lower pitch (more authoritative)
+  rate = 0.85 + (urgency / 100) * 0.5 + (conf / 100) * 0.15;
+  pitch = 0.85 + (empathy / 100) * 0.5 - (urgency / 100) * 0.15;
+
+  // Clamp
+  rate = Math.max(0.7, Math.min(1.8, rate));
+  pitch = Math.max(0.7, Math.min(1.6, pitch));
+
+  return { rate, pitch };
+}
+
+function playVoice(text, hintPreset = null) {
+  if (!('speechSynthesis' in window)) {
+    showToast('Your browser does not support speech synthesis.', 'warning');
+    return;
+  }
+
+  stopVoice(); // stop any current
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'es-ES'; // default for the demo text; will be overridden by chosen voice
+
+  const selectedVoice = getSelectedVoice();
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+    utterance.lang = selectedVoice.lang;
+  }
+
+  // Apply tone-influenced params
+  const tone = getToneParamsForSpeech();
+
+  // Further adjust based on preset hint if provided (called from preset buttons)
+  if (hintPreset) {
+    if (hintPreset === 'playful') {
+      tone.rate = Math.min(1.6, tone.rate + 0.15);
+      tone.pitch = Math.min(1.5, tone.pitch + 0.25);
+    } else if (hintPreset === 'authoritative') {
+      tone.rate = Math.max(0.75, tone.rate - 0.1);
+      tone.pitch = Math.max(0.7, tone.pitch - 0.2);
+    } else if (hintPreset === 'friendly') {
+      tone.pitch = Math.min(1.45, tone.pitch + 0.15);
+    } else if (hintPreset === 'confident') {
+      tone.pitch = Math.max(0.8, tone.pitch - 0.1);
+    }
+  }
+
+  utterance.rate = tone.rate;
+  utterance.pitch = tone.pitch;
+  utterance.volume = 0.95;
+
+  currentUtterance = utterance;
+
+  utterance.onend = () => { currentUtterance = null; };
+  utterance.onerror = () => {
+    showToast('Voice playback error', 'warning');
+    currentUtterance = null;
+  };
+
+  window.speechSynthesis.speak(utterance);
+  showToast('🔊 Playing voice preview...', 'info');
+}
+
+function playSuggestionVoice() {
+  const el = document.getElementById('voiceRewriteSuggestions');
+  if (!el) return;
+  let text = el.textContent || el.innerText || '';
+  // Clean quotes
+  text = text.replace(/^["']|["']$/g, '').trim();
+  if (!text) {
+    showToast('No suggestion text to play.', 'warning');
+    return;
+  }
+  playVoice(text);
+}
+
+function playInputVoice() {
+  const el = document.getElementById('voiceTextToRewrite');
+  if (!el) return;
+  const text = (el.value || '').trim();
+  if (!text) {
+    showToast('Enter some text first.', 'warning');
+    return;
+  }
+  playVoice(text);
+}
+
+function stopVoice() {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  currentUtterance = null;
+}
+
+// Initialize voices (call this on load)
+function initVoiceLab() {
+  // Populate voices now + when they load (some browsers are async)
+  if ('speechSynthesis' in window) {
+    populateVoiceSelect();
+    window.speechSynthesis.onvoiceschanged = populateVoiceSelect;
+  } else {
+    const sel = document.getElementById('voiceSelect');
+    if (sel) sel.style.display = 'none';
+  }
+
+  // Optional: make preset buttons also speak a quick preview when double-clicked (discoverable)
+  ['confident', 'playful', 'authoritative', 'friendly'].forEach(preset => {
+    const btn = document.getElementById(`btn-voice-${preset}`);
+    if (btn) {
+      btn.setAttribute('title', btn.getAttribute('title') || `Apply ${preset} tone. Double-click to preview voice.`);
+      btn.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        const data = voiceProfiles[preset];
+        if (data && data.suggestion) {
+          let sample = data.suggestion.replace(/"/g, '');
+          playVoice(sample, preset);
+        }
+      });
+    }
+  });
+}
+
+// Auto-init a bit after load (and when switching to the tab)
+setTimeout(initVoiceLab, 800);
+
+// Ensure voices are populated when user visits the Voice & Tone tab
+setTimeout(() => {
+  const voiceTabBtn = document.getElementById('tab-voice-tone');
+  if (voiceTabBtn) {
+    voiceTabBtn.addEventListener('click', () => {
+      setTimeout(populateVoiceSelect, 250);
+    });
+  }
+}, 1200);
+
+// 4. A/B Test Studio — main logic is the enhanced version below
+let simInterval = null;
+let abCurrentWinner = null;
+let abVotes = { A: { like: 0, dislike: 0 }, B: { like: 0, dislike: 0 } };
+
+// Force initial display of vote counts (0) 
+setTimeout(function() {
+  if (typeof updateABVoteDisplays === 'function') {
+    updateABVoteDisplays();
+  }
+}, 200);
 
 function resetABSimulation() {
   if (simInterval) {
     clearInterval(simInterval);
     simInterval = null;
   }
-  document.getElementById('predictedCtrA').textContent = '4.8%';
-  document.getElementById('predictedCtrB').textContent = '3.9%';
-  document.getElementById('abSimLog').textContent = 'Simulation reset. Ready for next run.';
-  document.getElementById('ctrChartLineA').setAttribute('points', '0,80 50,60 100,50 150,30 200,20 250,15 300,10');
-  document.getElementById('ctrChartLineB').setAttribute('points', '0,85 50,75 100,65 150,55 200,45 250,42 300,40');
+  const aEl = document.getElementById('predictedCtrA');
+  const bEl = document.getElementById('predictedCtrB');
+  const log = document.getElementById('abSimLog');
+  if (aEl) aEl.textContent = '4.8%';
+  if (bEl) bEl.textContent = '3.9%';
+  if (log) log.textContent = 'Simulation reset. Ready for next run.';
+  // reset chart if exists
+  try {
+    document.getElementById('ctrChartLineA').setAttribute('points', '0,80 50,60 100,50 150,30 200,20 250,15 300,10');
+    document.getElementById('ctrChartLineB').setAttribute('points', '0,85 50,75 100,65 150,55 200,45 250,42 300,40');
+  } catch(e){}
+  abCurrentWinner = null;
+  abVotes = { A: { like: 0, dislike: 0 }, B: { like: 0, dislike: 0 } };
+  if (typeof updateABVoteDisplays === 'function') updateABVoteDisplays();
+  const summary = document.getElementById('abWinnerSummary');
+  if (summary) summary.textContent = 'Run simulation or vote to determine winner.';
   showToast('Simulation data cleared.', 'info');
 }
 
+// Real A/B vote functions (called by HTML buttons)
+
 function voteAB(version, isLike) {
-  showToast(`Logged ${isLike ? 'like' : 'dislike'} vote for Version ${version}. Data fed to recommendation engine.`, 'success');
+  if (typeof abVotes === 'undefined' || abVotes === null) {
+    abVotes = { A: { like: 0, dislike: 0 }, B: { like: 0, dislike: 0 } };
+  }
+  if (!abVotes[version]) abVotes[version] = { like: 0, dislike: 0 };
+  if (isLike) abVotes[version].like++; else abVotes[version].dislike++;
+  updateABVoteDisplays();
+  showToast(`${isLike ? '👍' : '👎'} Vote recorded for Version ${version}`, 'info');
 }
+
+function updateABVoteDisplays() {
+  if (typeof abVotes === 'undefined' || abVotes === null) {
+    abVotes = { A: { like: 0, dislike: 0 }, B: { like: 0, dislike: 0 } };
+  }
+  const aL = document.getElementById('abVotesALikes');
+  const aD = document.getElementById('abVotesADislikes');
+  const bL = document.getElementById('abVotesBLikes');
+  const bD = document.getElementById('abVotesBDislikes');
+  if (aL) aL.textContent = abVotes.A.like;
+  if (aD) aD.textContent = abVotes.A.dislike;
+  if (bL) bL.textContent = abVotes.B.like;
+  if (bD) bD.textContent = abVotes.B.dislike;
+}
+
+// Initialize vote displays to 0 on load
+setTimeout(() => {
+  if (typeof updateABVoteDisplays === 'function') {
+    updateABVoteDisplays();
+  }
+}, 500);
 
 // 5. Campaign Library filtering (by name and market)
 function filterCampaigns() {
-  const query = (document.getElementById('campaignSearchInput')?.value || '').toLowerCase();
-  const market = document.getElementById('campaignMarketFilter')?.value || 'all';
-  const cards = document.querySelectorAll('#campaignsContainer .campaign-card');
-  cards.forEach(card => {
-    const title = card.querySelector('.font-bold').textContent.toLowerCase();
-    const cardMarket = card.getAttribute('data-market') || '';
-    const matchQuery = title.includes(query);
-    const matchMarket = (market === 'all' || cardMarket === market);
-    if (matchQuery && matchMarket) {
-      card.style.display = 'block';
-    } else {
-      card.style.display = 'none';
-    }
-  });
+  // Delegate to the active rich implementation (defined later)
+  if (typeof renderCampaigns === 'function' && document.getElementById('campaignSearchInput')) {
+    // The full filterCampaigns defined later will handle re-render + filtering
+    // Call the detailed version by name (it will be the last definition)
+    const activeFilter = window.__activeCampaignFilter || null;
+    if (activeFilter) activeFilter(); else renderCampaigns(); // fallback
+  }
 }
 
 // 6. Content Calendar
@@ -2189,7 +2546,8 @@ function openAddToCampaignModal(assetName) {
   pendingAssetToAdd = assetName;
   const select = document.getElementById('addToCampaignSelect');
   if (select) {
-    select.innerHTML = state.campaigns.map(cam => `<option value="${cam.id}">${cam.name} (${cam.market})</option>`).join('');
+    const camps = getCampaigns();
+    select.innerHTML = camps.map(cam => `<option value="${cam.id}">${cam.name} (${cam.market})</option>`).join('');
   }
   document.getElementById('addToCampaignModal').style.display = 'flex';
 }
@@ -2201,9 +2559,12 @@ function closeAddToCampaignModal() {
 
 function submitAddToCampaign() {
   const camId = document.getElementById('addToCampaignSelect').value;
-  const cam = state.campaigns.find(c => c.id === camId);
+  const camps = getCampaigns();
+  const cam = camps.find(c => c.id === camId);
   if (cam && pendingAssetToAdd) {
+    if (!Array.isArray(cam.assets)) cam.assets = [];
     cam.assets.push(pendingAssetToAdd);
+    setCampaigns(camps);
     renderCampaigns();
     closeAddToCampaignModal();
     showToast(`Successfully added ${pendingAssetToAdd} to campaign: ${cam.name}`, 'success');
@@ -2211,6 +2572,8 @@ function submitAddToCampaign() {
 }
 
 // 3. Creator Tool Canvas templates & controls
+let creatorCustomBgUrl = null;  // for custom uploaded or gallery bg images
+
 function setCreatorTemplate(template) {
   const btns = document.querySelectorAll('[id^="btn-tmpl-"]');
   btns.forEach(btn => btn.classList.toggle('active', btn.id === `btn-tmpl-${template}`));
@@ -2259,7 +2622,7 @@ function setCreatorTemplate(template) {
   if (template !== 'blank') {
     if (document.getElementById('creatorHeadlineInput').value === '') {
       document.getElementById('creatorHeadlineInput').value = 'Upgrade Your Financial Power';
-      document.getElementById('creatorSubtextInput').value = 'Metal Card Unlimited Transfers Premium Cash backs';
+      document.getElementById('creatorSubtextInput').value = 'Metal card • Unlimited transfers • Premium cashback';
       document.getElementById('creatorCTAInput').value = 'Upgrade Now →';
     }
   }
@@ -2267,18 +2630,20 @@ function setCreatorTemplate(template) {
   // Handle banner specific inner layouts
   if (template === 'banner') {
     card.innerHTML = `
+      <img id="creatorPreviewLogo" src="logo_wordmark_white.png" style="height:28px; width:auto; object-fit:contain; margin-right:10px; flex-shrink:0; align-self:center;" alt="Logo" />
       <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px;">
         <div style="font-size:0.5rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-teal);font-weight:700;">Revolut Premium</div>
         <h2 id="creatorPreviewHeadline" style="font-size:1.1rem;font-weight:800;margin:0;color:#fff;">Upgrade Your Financial Power</h2>
-        <p id="creatorPreviewSubtext" style="font-size:0.7rem;color:var(--text-muted);margin:0;">Metal Card Unlimited Transfers Premium Cash backs</p>
+        <p id="creatorPreviewSubtext" style="font-size:0.7rem;color:var(--text-muted);margin:0;">Metal card • Unlimited transfers • Premium cashback</p>
       </div>
-      <div id="creatorPreviewCTA" style="display:inline-block;background:var(--accent-teal);color:#0b1018;padding:6px 16px;border-radius:var(--radius-full);font-weight:700;font-size:0.75rem;white-space:nowrap;margin-left:12px;cursor:pointer;">Upgrade Now →</div>
+      <div id="creatorPreviewCTA" style="display:inline-block;background:var(--accent-teal);color:#0b1018;padding:6px 16px;border-radius:var(--radius-full);font-weight:700;font-size:0.75rem;white-space:nowrap;margin-left:8px;cursor:pointer;">Upgrade Now →</div>
     `;
   } else {
     card.innerHTML = `
+      <img id="creatorPreviewLogo" src="logo_wordmark_white.png" style="height:36px; width:auto; object-fit:contain; margin:0 auto 8px; display:block;" alt="Logo" />
       <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent-teal);margin-bottom:8px;">Revolut Premium</div>
       <h2 id="creatorPreviewHeadline" style="font-size:1.6rem;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg, #fff, var(--accent-teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2;">Upgrade Your Financial Power</h2>
-      <p id="creatorPreviewSubtext" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px;line-height:1.45;">Metal Card Unlimited Transfers Premium Cash backs</p>
+      <p id="creatorPreviewSubtext" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px;line-height:1.45;">Metal card • Unlimited transfers • Premium cashback</p>
       <div id="creatorPreviewCTA" style="display:inline-block;background:var(--accent-teal);color:#0b1018;padding:8px 24px;border-radius:var(--radius-full);font-weight:700;font-size:0.85rem;margin-top:auto;cursor:pointer;transition:all 0.2s;">Upgrade Now →</div>
     `;
   }
@@ -2306,44 +2671,133 @@ function updateCreatorCanvas() {
   }
 
   if (card) {
-    if (bgTheme === 'midnight') {
+    if (creatorCustomBgUrl) {
+      // Custom image takes full priority — theme is ignored
+      card.style.backgroundImage = `url(${creatorCustomBgUrl})`;
+      card.style.backgroundSize = 'cover';
+      card.style.backgroundPosition = 'center';
+      card.style.backgroundRepeat = 'no-repeat';
+      card.style.border = '1px solid rgba(255,255,255,0.15)';
+      // Readable text over photos
+      if (hNode) {
+        hNode.style.background = 'none';
+        hNode.style.webkitTextFillColor = 'initial';
+        hNode.style.color = '#fff';
+        hNode.style.textShadow = '0 1px 4px rgba(0,0,0,0.8)';
+      }
+      if (sNode) {
+        sNode.style.color = '#eee';
+        sNode.style.textShadow = '0 1px 3px rgba(0,0,0,0.7)';
+      }
+    } else if (bgTheme === 'midnight') {
       card.style.background = 'linear-gradient(135deg, #0b1018, #131b28)';
+      card.style.backgroundImage = '';
       card.style.border = '1px solid rgba(255,255,255,0.06)';
       if (hNode) {
         hNode.style.background = 'linear-gradient(135deg, #fff, var(--accent-teal))';
         hNode.style.webkitBackgroundClip = 'text';
         hNode.style.webkitTextFillColor = 'transparent';
+        hNode.style.textShadow = '';
       }
       if (sNode) sNode.style.color = 'var(--text-muted)';
     } else if (bgTheme === 'slate') {
       card.style.background = '#2c3540';
+      card.style.backgroundImage = '';
       card.style.border = '1px solid rgba(255,255,255,0.1)';
       if (hNode) {
         hNode.style.background = 'none';
         hNode.style.webkitTextFillColor = 'initial';
         hNode.style.color = '#ffffff';
+        hNode.style.textShadow = '';
       }
       if (sNode) sNode.style.color = '#a0aec0';
     } else if (bgTheme === 'ultra') {
       card.style.background = 'linear-gradient(135deg, #050b14, #0b1c3a)';
+      card.style.backgroundImage = '';
       card.style.border = '1px solid var(--accent-blue-dim)';
       if (hNode) {
         hNode.style.background = 'linear-gradient(135deg, #ffffff, #4d8df7)';
         hNode.style.webkitBackgroundClip = 'text';
         hNode.style.webkitTextFillColor = 'transparent';
+        hNode.style.textShadow = '';
       }
       if (sNode) sNode.style.color = '#718096';
     } else if (bgTheme === 'light') {
       card.style.background = '#f4f5f7';
+      card.style.backgroundImage = '';
       card.style.border = '1px solid #dcdfe4';
       if (hNode) {
         hNode.style.background = 'none';
         hNode.style.webkitTextFillColor = 'initial';
         hNode.style.color = '#0b1018';
+        hNode.style.textShadow = '';
       }
       if (sNode) sNode.style.color = '#5a6578';
     }
   }
+
+  // Sync product logo into the preview card (fixes missing logo in Creator Tool)
+  const logoSel = document.getElementById('creatorProductLogo');
+  const logoImg = document.getElementById('creatorPreviewLogo');
+  if (logoImg && logoSel && logoSel.value) {
+    const currentBase = (logoImg.src || '').split(/[?#]/)[0].split('/').pop() || '';
+    const wanted = logoSel.value;
+    if (currentBase !== wanted) {
+      logoImg.src = wanted + '?v=' + Date.now();
+    }
+    // Size logos appropriately (wordmark/business larger), smaller on banner
+    const isBig = wanted.includes('wordmark') || wanted.includes('business');
+    const isBanner = !!(card && card.style.height && card.style.height.includes('120'));
+    let h = isBig ? '38px' : '30px';
+    if (isBanner) h = isBig ? '26px' : '22px';
+    logoImg.style.height = h;
+    logoImg.style.width = 'auto';
+  }
+}
+
+// === Custom Background Image Support for Creator Tool ===
+
+function handleCreatorBgUpload(input) {
+  if (!input.files || !input.files[0]) return;
+
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    creatorCustomBgUrl = e.target.result;
+    const card = document.getElementById('creatorPreviewCard');
+    if (card) {
+      // Optional: auto-switch to a neutral theme label
+      const bgSel = document.getElementById('creatorBGInput');
+      if (bgSel) bgSel.value = 'midnight'; // visual hint
+    }
+    updateCreatorCanvas();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearCreatorBgImage() {
+  creatorCustomBgUrl = null;
+  const input = document.getElementById('creatorBgImageInput');
+  if (input) input.value = '';
+  updateCreatorCanvas();
+}
+
+function setCreatorBackgroundImage(src) {
+  // Use images from Inspiration Gallery or any relative image
+  creatorCustomBgUrl = src + '?t=' + Date.now(); // bust cache if needed, but for local files ok
+  // Set a theme for contrast handling
+  const bgSel = document.getElementById('creatorBGInput');
+  if (bgSel) bgSel.value = 'midnight';
+  updateCreatorCanvas();
+}
+
+function selectCreatorBgTheme(themeValue) {
+  // Choosing a theme clears any custom image
+  creatorCustomBgUrl = null;
+  const input = document.getElementById('creatorBgImageInput');
+  if (input) input.value = '';
+  // Now let the normal update run with the theme
+  updateCreatorCanvas();
 }
 
 // Remix template action
@@ -2371,70 +2825,49 @@ state.campaigns = [
   { id: 'cam-3', name: 'ES Crypto Cashback', market: 'ES', status: 'Draft', views: 0, ctr: 0.0, conversions: 0, assets: [] }
 ];
 
+// NOTE: Legacy renderCampaigns kept for reference but overridden later by the professional version below.
+// The final function renderCampaigns (with rich cards + support for getCampaigns) is the active one.
 function renderCampaigns() {
-  const container = document.getElementById('campaignsContainer');
-  if (!container) return;
-  container.innerHTML = state.campaigns.map(cam => {
-    let badgeClass = cam.status === 'Live' ? 'badge-green' : cam.status === 'Draft' ? 'badge-cyan' : 'badge-orange';
-    if (cam.status === 'Approved') badgeClass = 'badge-green';
-    return `
-      <div class="card campaign-card" style="padding:12px;" data-market="${cam.market}">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span class="badge ${badgeClass}">${cam.status}</span>
-          <span class="text-xs text-muted">${cam.market} market</span>
-        </div>
-        <div class="font-bold text-sm" style="color:var(--text-secondary);">${cam.name}</div>
-        <div class="mt-sm text-xs text-muted" style="line-height:1.4;">
-          <div>Views: <span class="font-bold text-secondary">${(cam.views / 1000).toFixed(0)}k</span></div>
-          <div>CTR: <span class="font-bold text-lime">${cam.ctr.toFixed(1)}%</span></div>
-          <div>Conversions: <span class="font-bold text-secondary">${cam.conversions}</span></div>
-          <div style="margin-top:4px;">Assets (${cam.assets.length}): <span class="font-bold text-secondary" style="font-size:0.75rem; word-break:break-all;">${cam.assets.join(', ') || 'None'}</span></div>
-        </div>
-        <div class="flex gap-xs mt-md">
-          <button class="btn btn-sm btn-outline" onclick="duplicateCampaign('${cam.id}')">Duplicate</button>
-          <button class="btn btn-sm btn-secondary" onclick="exportCampaign('${cam.id}')">Export</button>
-        </div>
-        <div class="flex gap-xs mt-sm" style="border-top:1px solid var(--border-default); padding-top:8px;">
-          <button class="btn btn-xs btn-outline btn-green" onclick="setCampaignStatus('${cam.id}', 'Approved')" style="flex:1; padding:4px 0; font-size:0.7rem;">✓ Approve</button>
-          <button class="btn btn-xs btn-outline btn-orange" onclick="setCampaignStatus('${cam.id}', 'Changes Requested')" style="flex:1; padding:4px 0; font-size:0.7rem;">✗ Reject</button>
-        </div>
-      </div>
-    `;
-  }).join('');
+  // Intentionally empty stub — real implementation defined later in the file using getCampaigns()
+  // This prevents old card format from taking over the Campaign Library tab.
 }
 
 function setCampaignStatus(camId, status) {
-  const cam = state.campaigns.find(c => c.id === camId);
+  const camps = getCampaigns();
+  const cam = camps.find(c => c.id === camId);
   if (cam) {
     cam.status = status;
+    setCampaigns(camps);
     renderCampaigns();
     showToast(`Campaign status updated to ${status}!`, status === 'Approved' ? 'success' : 'warning');
   }
 }
 
 function duplicateCampaign(camId) {
-  const cam = state.campaigns.find(c => c.id === camId);
+  // Legacy support (uses ID) — forwards to new system
+  const camps = getCampaigns();
+  const cam = camps.find(c => c.id === camId);
   if (cam) {
-    const newCam = {
-      ...cam,
-      id: `cam-${Date.now()}`,
-      name: `${cam.name} (Copy)`,
-      status: 'Draft',
-      views: 0,
-      ctr: 0.0,
-      conversions: 0,
-      assets: [...cam.assets]
-    };
-    state.campaigns.push(newCam);
+    const copy = JSON.parse(JSON.stringify(cam));
+    copy.id = 'GRV-' + Date.now().toString(36).toUpperCase();
+    copy.name = `${cam.name} (Copy)`;
+    copy.status = 'Draft';
+    copy.views = 0; copy.ctr = 0; copy.conversions = 0;
+    copy.assets = Array.isArray(cam.assets) ? [...cam.assets] : [];
+    copy.created = new Date().toISOString().split('T')[0];
+    camps.unshift(copy);
+    setCampaigns(camps);
     renderCampaigns();
-    showToast(`Campaign duplicated as ${newCam.name}!`, 'success');
+    showToast(`Campaign duplicated as ${copy.name}!`, 'success');
   }
 }
 
 function exportCampaign(camId) {
-  const cam = state.campaigns.find(c => c.id === camId);
+  const camps = getCampaigns();
+  const cam = camps.find(c => c.id === camId);
   if (cam) {
-    showToast(`Exported campaign: ${cam.name} with ${cam.assets.length} assets.`, 'success');
+    const cnt = Array.isArray(cam.assets) ? cam.assets.length : (cam.assets || 0);
+    showToast(`Exported campaign: ${cam.name} with ${cnt} assets.`, 'success');
   }
 }
 
@@ -3513,16 +3946,137 @@ if (!state.activeMarketMode) state.activeMarketMode = null;
 document.addEventListener('DOMContentLoaded', () => {
   // Delay to ensure DOM is fully ready
   setTimeout(initTargetMarkets, 100);
+  setTimeout(initAnalyticsTab, 150);
 });
 
-// Re-init when switching to the tab
+// Re-init when switching to the tab (earlier hook; final override below handles everything)
 const origSwitchTab = switchTab;
 switchTab = function(tabId) {
   origSwitchTab(tabId);
   if (tabId === 'target-markets') {
-    initTargetMarkets();
+    setTimeout(initTargetMarkets, 30);
   }
 };
+
+// ── Analytics & Insights Market Selector ──
+function initAnalyticsTab() {
+  populateAnalyticsMarkets();
+  // Set default to ES if exists
+  const select = document.getElementById('analyticsMarketSelect');
+  if (select) {
+    const defaultCode = 'ES';
+    if ([...select.options].some(o => o.value === defaultCode)) {
+      select.value = defaultCode;
+    }
+    updateAnalyticsForMarket(select.value);
+  }
+}
+
+function populateAnalyticsMarkets() {
+  const select = document.getElementById('analyticsMarketSelect');
+  if (!select || typeof targetMarketsData === 'undefined') return;
+
+  select.innerHTML = '';
+  targetMarketsData.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.code;
+    opt.textContent = `${m.flag} ${m.name} (${m.code})`;
+    select.appendChild(opt);
+  });
+}
+
+function updateAnalyticsForMarket(code) {
+  if (typeof targetMarketsData === 'undefined') return;
+  const market = targetMarketsData.find(m => m.code === code) || targetMarketsData.find(m => m.code === 'ES') || targetMarketsData[0];
+  if (!market) return;
+
+  const heatmapTitle = document.getElementById('analyticsHeatmapTitle');
+  const insightsTitle = document.getElementById('analyticsInsightsTitle');
+  const heatmapContent = document.getElementById('analyticsHeatmapContent');
+  const insightsContent = document.getElementById('analyticsInsightsContent');
+  const infoEl = document.getElementById('analyticsMarketInfo');
+  const footerEl = document.getElementById('analyticsHeatmapFooter');
+
+  if (heatmapTitle) heatmapTitle.innerHTML = `<span class="icon">${market.flag}</span> ${market.name} Market Heatmap`;
+  if (insightsTitle) insightsTitle.innerHTML = `<span class="icon">💡</span> AI Audience Insights for ${market.name}`;
+  if (infoEl) infoEl.textContent = `${market.customers} customers • ${market.continent || ''}`;
+
+  // Demo heatmap data (cities vary by market, fallback generic)
+  if (heatmapContent) {
+    const heatmapData = getDemoHeatmapForMarket(code);
+    heatmapContent.innerHTML = heatmapData.map(item => 
+      `<div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border-default);"><span>${item.city}</span><span class="${parseFloat(item.ctr) > 4.5 ? 'text-lime' : 'text-blue'} font-bold">${item.ctr}% CTR</span></div>`
+    ).join('');
+  }
+
+  if (insightsContent) {
+    insightsContent.innerHTML = getDemoInsightsForMarket(market);
+  }
+
+  if (footerEl) {
+    footerEl.textContent = market.tier === 'pipeline' 
+      ? 'Pre-launch market — focus on awareness and waitlist building.' 
+      : 'Highest response rate detected on vertical formats (1080×1920).';
+  }
+}
+
+// Demo data helpers for analytics
+function getDemoHeatmapForMarket(code) {
+  const map = {
+    'ES': [
+      {city: 'Madrid', ctr: '5.1'},
+      {city: 'Barcelona', ctr: '4.8'},
+      {city: 'Alicante', ctr: '4.6'},
+      {city: 'Seville', ctr: '3.9'}
+    ],
+    'UK': [
+      {city: 'London', ctr: '5.8'},
+      {city: 'Manchester', ctr: '4.2'},
+      {city: 'Edinburgh', ctr: '3.7'},
+      {city: 'Birmingham', ctr: '4.1'}
+    ],
+    'US': [
+      {city: 'New York', ctr: '4.9'},
+      {city: 'Los Angeles', ctr: '4.3'},
+      {city: 'Chicago', ctr: '3.8'},
+      {city: 'Miami', ctr: '5.2'}
+    ],
+    'DE': [
+      {city: 'Berlin', ctr: '4.5'},
+      {city: 'Munich', ctr: '5.0'},
+      {city: 'Frankfurt', ctr: '3.6'},
+      {city: 'Hamburg', ctr: '4.1'}
+    ]
+  };
+  if (map[code]) return map[code];
+  // Generic fallback
+  return [
+    {city: 'Capital City', ctr: (3.5 + Math.random()*1.5).toFixed(1)},
+    {city: 'Major Metro', ctr: (4.0 + Math.random()*1.2).toFixed(1)},
+    {city: 'Regional Hub', ctr: (3.2 + Math.random()*1.8).toFixed(1)},
+    {city: 'Other', ctr: (2.8 + Math.random()*1.5).toFixed(1)}
+  ];
+}
+
+function getDemoInsightsForMarket(market) {
+  const name = market.name;
+  const isCore = market.tier === 'core';
+  const isPipeline = market.tier === 'pipeline';
+  if (isPipeline) {
+    return `${name} is a high-potential pipeline market. Focus on brand awareness and early adopter acquisition. Vertical video and influencer partnerships show strongest early signals.`;
+  }
+  const base = `${name} audience shows strong engagement with premium fintech messaging. `;
+  if (market.code === 'ES' || market.code === 'PT_PT' || market.code === 'MX') {
+    return base + `Strong preference for **lifestyle and travel benefits** (+38% vs average). Recommend 70% vertical video spend focused on cashback and experiences.`;
+  }
+  if (market.code === 'UK' || market.code === 'US' || market.code === 'DE') {
+    return base + `High conversion on **metal card animations and premium status** cues (+52% engagement). Allocate heavily to short-form premium storytelling.`;
+  }
+  return base + `Digital natives respond best to **convenience and cashback** narratives. Vertical formats outperform static by 31%.`;
+}
+
+// Hook analytics init into existing DOM ready if needed
+// (called via switchTab now, plus we call on load below)
 
 // ═══════════════════════════════════════════════════════════════
 // 🚀 AUTONOMOUS CREATIVE PRODUCTION ENGINE — ENHANCED
@@ -3593,7 +4147,7 @@ function runAutonomousPipeline() {
               provider: providerName,
               brief: demoPrompt.substring(0, 110) + '...',
               assetHeadline: 'Upgrade Your Financial Power',
-              assetBody: 'Metal Card Unlimited Transfers Premium Cash backs',
+              assetBody: 'Metal card • Unlimited transfers • Premium cashback',
               campaignName: 'Ultra Metal Launch — ES/UK Autonomous',
               timeline: timeline
             });
@@ -3688,7 +4242,7 @@ function renderAutoHub() {
     assetEl.innerHTML = `
       <div style="font-size:0.65rem; color:#b8f03e; margin-bottom:4px;">REVOLUT PREMIUM</div>
       <div style="font-size:1.15rem; font-weight:800; color:#fff; line-height:1.1;">${lastAutoRun.assetHeadline || 'Upgrade Your Financial Power'}</div>
-      <div style="font-size:0.8rem; color:#a8b1c0; margin-top:4px;">${lastAutoRun.assetBody || 'Metal Card • Unlimited Transfers • Premium Cash backs'}</div>
+      <div style="font-size:0.8rem; color:#a8b1c0; margin-top:4px;">${lastAutoRun.assetBody || 'Metal card • Unlimited transfers • Premium cashback'}</div>
       <div style="margin-top:10px; display:inline-block; background:#b8f03e; color:#0a1018; padding:4px 10px; border-radius:999px; font-size:0.7rem; font-weight:700;">Upgrade Now →</div>
     `;
   }
@@ -3741,11 +4295,14 @@ function getCampaigns() {
       window.grovolutCampaigns = JSON.parse(localStorage.getItem('grovolut_campaigns') || '[]');
     } catch { window.grovolutCampaigns = []; }
   }
+  if (typeof state !== 'undefined') state.campaigns = window.grovolutCampaigns;
   return window.grovolutCampaigns;
 }
 
 function setCampaigns(camps) {
   window.grovolutCampaigns = camps;
+  // Mirror to legacy state for any add flows / other references
+  if (typeof state !== 'undefined') state.campaigns = camps;
   try { localStorage.setItem('grovolut_campaigns', JSON.stringify(camps)); } catch {}
 }
 
@@ -3764,23 +4321,46 @@ function renderCampaigns(filtered = null) {
     return;
   }
 
-  container.innerHTML = camps.map((c, idx) => `
-    <div class="card" style="padding:14px; font-size:0.85rem;">
-      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-        <div>
-          <div style="font-weight:700;">${c.name}</div>
-          <div class="text-xs text-muted">${c.market} • ${c.assets} assets</div>
+  container.innerHTML = camps.map((c, idx) => {
+    const assetCount = Array.isArray(c.assets) ? c.assets.length : (c.assets || 0);
+    const statusClass = c.status === 'Live' ? 'badge-green' :
+                        c.status === 'Approved' ? 'badge-lime' :
+                        c.status === 'Review' ? 'badge-orange' :
+                        c.status === 'Paused' ? 'badge-blue' :
+                        c.status === 'Completed' ? 'badge-cyan' : 'badge-blue';
+
+    const briefShort = (c.prompt || '').substring(0, 78) + ((c.prompt || '').length > 78 ? '…' : '');
+    const perf = c.views ? `${Math.round(c.views/1000)}k views · ${c.ctr}% CTR` : 'No performance yet';
+
+    return `
+      <div class="card" style="padding:14px; font-size:0.82rem; border:1px solid var(--border-default); transition: transform .1s ease, box-shadow .1s ease;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(0,0,0,0.25)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+          <div style="display:flex; gap:8px; align-items:flex-start;">
+            ${c.image ? `<img src="${c.image}" style="width:55px; height:34px; object-fit:cover; border-radius:4px; border:1px solid #333; flex-shrink:0;" alt="Visual" />` : ''}
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:700; font-size:0.95rem; line-height:1.15; color:#f1f5f9;">${c.name}</div>
+              <div class="text-xs text-muted" style="margin-top:2px;">${c.market} • ${assetCount} asset${assetCount===1?'':'s'} • ${c.startDate || ''}</div>
+            </div>
+          </div>
+          <span class="badge ${statusClass}" style="font-size:0.68rem; padding:1px 8px; white-space:nowrap;">${c.status}</span>
         </div>
-        <span class="badge ${c.status === 'Live' ? 'badge-green' : c.status === 'Approved' ? 'badge-lime' : c.status === 'Review' ? 'badge-orange' : 'badge-blue'}">${c.status}</span>
+
+        <div class="text-xs mt-sm" style="color:#9aa4b8; line-height:1.25; min-height:30px;">${briefShort || '—'}</div>
+
+        <div style="display:flex; align-items:center; gap:10px; margin-top:8px; font-size:0.7rem; color:#6b768a;">
+          <span>📈 ${perf}</span>
+          ${c.budget ? `<span style="margin-left:auto;">€${(c.budget/1000).toFixed(0)}k</span>` : ''}
+        </div>
+
+        <div class="flex gap-xs mt-md" style="flex-wrap:wrap; border-top:1px solid var(--border-default); padding-top:8px;">
+          <button class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); cycleCampaignStatus(${idx})" title="Cycle status">↻ Cycle</button>
+          <button class="btn btn-xs btn-primary" onclick="event.stopPropagation(); viewCampaign(${idx})">View</button>
+          <button class="btn btn-xs btn-outline" onclick="event.stopPropagation(); duplicateCampaignFromIdx(${idx})">Duplicate</button>
+          <button class="btn btn-xs btn-danger" onclick="event.stopPropagation(); deleteCampaign(${idx})" style="margin-left:auto; color:#f66;">Delete</button>
+        </div>
       </div>
-      <div class="text-xs mt-sm" style="color:var(--text-tertiary); line-height:1.3;">${c.prompt || ''}</div>
-      <div class="flex gap-xs mt-md" style="flex-wrap:wrap;">
-        <button class="btn btn-xs btn-secondary" onclick="cycleCampaignStatus(${idx})">Cycle Status</button>
-        <button class="btn btn-xs btn-outline" onclick="viewCampaign(${idx})">View</button>
-        <button class="btn btn-xs btn-danger" onclick="deleteCampaign(${idx})" style="margin-left:auto;">Delete</button>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function filterCampaigns() {
@@ -3798,50 +4378,319 @@ function filterCampaigns() {
 }
 
 function openNewCampaignModal() {
-  const name = prompt('Campaign name:', 'New Premium Campaign');
-  if (!name) return;
+  // Show the comprehensive modal
+  const modal = document.getElementById('newCampaignModal');
+  if (!modal) return;
 
-  const market = prompt('Primary market(s):', 'ES / UK') || 'Multi';
+  // Reset fields
+  const nameEl = document.getElementById('campaignNameInput');
+  const briefEl = document.getElementById('campaignBriefInput');
+  const marketEl = document.getElementById('campaignMarketInput');
+  const statusEl = document.getElementById('campaignStatusInput');
+  const startEl = document.getElementById('campaignStartInput');
+  const endEl = document.getElementById('campaignEndInput');
+  const budgetEl = document.getElementById('campaignBudgetInput');
+  const channelsEl = document.getElementById('campaignChannelsInput');
+  const audienceEl = document.getElementById('campaignAudienceInput');
+  const goalEl = document.getElementById('campaignGoalInput');
+
+  if (nameEl) nameEl.value = 'Q3 Metal Card Acquisition';
+  if (briefEl) briefEl.value = 'Drive Premium metal card upgrades with focus on cashback and airport lounge access benefits.';
+  if (marketEl) marketEl.value = 'ES';
+  if (statusEl) statusEl.value = 'Draft';
+  if (startEl) startEl.value = '2026-07-15';
+  if (endEl) endEl.value = '2026-09-30';
+  if (budgetEl) budgetEl.value = '45000';
+  if (channelsEl) channelsEl.value = 'story,social,banner';
+  if (audienceEl) audienceEl.value = 'Urban professionals, 25-40, high income';
+  if (goalEl) goalEl.value = '18% increase in metal sign-ups';
+
+  modal.style.display = 'flex';
+}
+
+function closeNewCampaignModal() {
+  const modal = document.getElementById('newCampaignModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function submitNewCampaign() {
+  const name = (document.getElementById('campaignNameInput')?.value || '').trim();
+  if (!name) {
+    showToast('Campaign name is required.', 'warning');
+    return;
+  }
+
+  const brief = document.getElementById('campaignBriefInput')?.value || '';
+  const market = document.getElementById('campaignMarketInput')?.value || 'Multi';
+  const status = document.getElementById('campaignStatusInput')?.value || 'Draft';
+  const startDate = document.getElementById('campaignStartInput')?.value || '';
+  const endDate = document.getElementById('campaignEndInput')?.value || '';
+  const budget = parseInt(document.getElementById('campaignBudgetInput')?.value || '0', 10) || 0;
+  const channelsRaw = document.getElementById('campaignChannelsInput')?.value || '';
+  const channels = channelsRaw.split(',').map(s => s.trim()).filter(Boolean);
+  const audience = document.getElementById('campaignAudienceInput')?.value || '';
+  const goal = document.getElementById('campaignGoalInput')?.value || '';
+
   const camps = getCampaigns();
 
-  camps.unshift({
+  const newCamp = {
     id: 'GRV-' + Date.now().toString(36).toUpperCase(),
-    name: name.trim(),
-    market: market.trim(),
-    status: 'Draft',
-    assets: 1,
-    created: new Date().toISOString(),
-    prompt: 'Manually created via UI',
-  });
+    name,
+    market,
+    status,
+    assets: [],
+    created: new Date().toISOString().split('T')[0],
+    prompt: brief,
+    startDate,
+    endDate,
+    budget,
+    channels,
+    audience,
+    goal,
+    views: 0,
+    ctr: 0,
+    conversions: 0
+  };
 
+  camps.unshift(newCamp);
   setCampaigns(camps);
   renderCampaigns();
-  showToast('📁 New campaign created', 'success');
+  closeNewCampaignModal();
+  showToast(`📁 Campaign "${name}" created`, 'success');
 }
 
 function cycleCampaignStatus(idx) {
   const camps = getCampaigns();
   if (!camps[idx]) return;
-  const order = ['Draft', 'Review', 'Approved', 'Live'];
+  const order = ['Draft', 'Review', 'Approved', 'Live', 'Paused', 'Completed'];
   let i = order.indexOf(camps[idx].status);
+  if (i === -1) i = 0;
   camps[idx].status = order[(i + 1) % order.length];
   setCampaigns(camps);
   renderCampaigns();
 }
 
 function viewCampaign(idx) {
-  const camps = getCampaigns();
-  const c = camps[idx];
-  if (!c) return;
-  alert(`Campaign: ${c.name}\nMarket: ${c.market}\nStatus: ${c.status}\nAssets: ${c.assets}\n\n${c.prompt || ''}`);
+  showCampaignDetail(idx);
 }
 
 function deleteCampaign(idx) {
-  if (!confirm('Delete this campaign?')) return;
+  if (!confirm('Delete this campaign? This cannot be undone.')) return;
   const camps = getCampaigns();
   camps.splice(idx, 1);
   setCampaigns(camps);
   renderCampaigns();
+  // Close detail if open
+  const detail = document.getElementById('campaignDetailModal');
+  if (detail) detail.style.display = 'none';
+}
+
+// Professional rich detail view (replaces the old alert box)
+function showCampaignDetail(idx) {
+  const camps = getCampaigns();
+  const c = camps[idx];
+  if (!c) return;
+
+  const modal = document.getElementById('campaignDetailModal');
+  const body = document.getElementById('campaignDetailBody');
+  if (!modal || !body) return;
+
+  const assetCount = Array.isArray(c.assets) ? c.assets.length : (c.assets || 0);
+  const assetList = Array.isArray(c.assets) && c.assets.length
+    ? c.assets.map((a, i) => `<div style="padding:4px 8px; background:#11161f; border-radius:4px; font-size:0.72rem; display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span>📎 ${a}</span>
+        <button onclick="removeAssetFromDetail(${idx}, ${i});" style="background:none; border:none; color:#f66; font-size:0.7rem; cursor:pointer;">✕</button>
+      </div>`).join('')
+    : `<div class="text-xs text-muted" style="padding:8px 0;">No assets added yet. Add from Asset Generator or Creator Tool.</div>`;
+
+  const channels = (c.channels && c.channels.length) ? c.channels.join(' • ') : '—';
+  const statusClass = c.status === 'Live' ? 'badge-green' : c.status === 'Approved' ? 'badge-lime' : c.status === 'Review' ? 'badge-orange' : c.status === 'Paused' ? 'badge-blue' : c.status === 'Completed' ? 'badge-cyan' : 'badge-blue';
+
+  body.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border-default);">
+      <div>
+        <div style="font-size:1.15rem; font-weight:800; color:#f1f5f9;">${c.name}</div>
+        <div style="font-size:0.78rem; color:#6b768a; margin-top:2px;">${c.id} • ${c.market}</div>
+      </div>
+      <div style="text-align:right;">
+        <span class="badge ${statusClass}" style="font-size:0.85rem; padding:3px 12px;">${c.status}</span>
+        <div style="font-size:0.65rem; color:#555; margin-top:3px;">${c.created || ''}</div>
+      </div>
+    </div>
+
+    ${c.image ? `
+    <div style="margin: 8px 0 16px; text-align:center;">
+      <img src="${c.image}" style="max-width:100%; max-height:240px; object-fit:contain; border-radius:8px; border:1px solid #222; background:#0a0f1a;" alt="${c.name}" />
+    </div>` : ''}
+
+    <div style="display:grid; grid-template-columns: 1.15fr 1fr; gap:16px;">
+      <!-- Left column: Brief + Meta -->
+      <div>
+        <div class="card-title text-xs" style="margin-bottom:6px; opacity:.75;">CREATIVE BRIEF</div>
+        <div style="background:#0e131f; border:1px solid #222a3a; border-radius:8px; padding:10px; font-size:0.82rem; line-height:1.35; min-height:68px;">
+          ${c.prompt || '<span class="text-muted">No brief provided.</span>'}
+        </div>
+
+        <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div>
+            <div class="text-xs text-muted">START / END</div>
+            <div style="font-size:0.85rem;">${c.startDate || '—'} → ${c.endDate || '—'}</div>
+          </div>
+          <div>
+            <div class="text-xs text-muted">BUDGET</div>
+            <div style="font-size:0.85rem; font-weight:600;">${c.budget ? '€' + c.budget.toLocaleString() : '—'}</div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <div class="text-xs text-muted">TARGET AUDIENCE</div>
+          <div style="font-size:0.82rem;">${c.audience || '—'}</div>
+        </div>
+        <div style="margin-top:8px;">
+          <div class="text-xs text-muted">GOAL / KPI</div>
+          <div style="font-size:0.82rem;">${c.goal || '—'}</div>
+        </div>
+        <div style="margin-top:8px;">
+          <div class="text-xs text-muted">CHANNELS</div>
+          <div style="font-size:0.78rem; color:#a3bffa;">${channels}</div>
+        </div>
+      </div>
+
+      <!-- Right column: Performance + Status + Assets -->
+      <div>
+        <div style="margin-bottom:8px;">
+          <div class="card-title text-xs" style="margin-bottom:6px; opacity:.75;">PERFORMANCE</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <div style="flex:1; background:#0e131f; padding:8px 10px; border-radius:6px; border:1px solid #222a3a;">
+              <div class="text-xs text-muted">Views</div>
+              <input id="detailViews" type="number" value="${c.views || 0}" style="background:transparent; border:none; color:#fff; font-weight:700; width:100%; font-size:1rem;" onchange="updateCampaignField(${idx}, 'views', this.value)">
+            </div>
+            <div style="flex:1; background:#0e131f; padding:8px 10px; border-radius:6px; border:1px solid #222a3a;">
+              <div class="text-xs text-muted">CTR %</div>
+              <input id="detailCtr" type="number" step="0.1" value="${c.ctr || 0}" style="background:transparent; border:none; color:#fff; font-weight:700; width:100%; font-size:1rem;" onchange="updateCampaignField(${idx}, 'ctr', this.value)">
+            </div>
+            <div style="flex:1; background:#0e131f; padding:8px 10px; border-radius:6px; border:1px solid #222a3a;">
+              <div class="text-xs text-muted">Conversions</div>
+              <input id="detailConv" type="number" value="${c.conversions || 0}" style="background:transparent; border:none; color:#fff; font-weight:700; width:100%; font-size:1rem;" onchange="updateCampaignField(${idx}, 'conversions', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card-title text-xs" style="margin-bottom:6px; opacity:.75;">STATUS CYCLE</div>
+          <div style="display:flex; gap:4px; flex-wrap:wrap;">
+            ${['Draft','Review','Approved','Live','Paused','Completed'].map(s => {
+              const active = c.status === s ? 'background:#132a1f; border-color:#22c55e; color:#86efac;' : '';
+              return `<button onclick="setDetailStatus(${idx}, '${s}');" class="btn btn-xs" style="font-size:0.68rem; padding:2px 9px; border:1px solid #334; ${active}">${s}</button>`;
+            }).join('')}
+          </div>
+          <div style="margin-top:4px;">
+            <button onclick="cycleCampaignStatus(${idx}); showCampaignDetail(${idx});" class="btn btn-xs btn-secondary" style="font-size:0.68rem;">↻ Quick Cycle</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="card-title text-xs" style="margin-bottom:6px; opacity:.75;">ASSETS (${assetCount})</div>
+          <div style="max-height:122px; overflow:auto; border:1px solid #222a3a; border-radius:6px; padding:6px; background:#0b0f18;">
+            ${assetList}
+          </div>
+          <div style="font-size:0.65rem; color:#555; margin-top:4px;">Add assets via "Add to Campaign" from Asset Generator / Creator Tool.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border-default); display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between; align-items:center;">
+      <div>
+        <button onclick="duplicateCampaignFromIdx(${idx}); document.getElementById('campaignDetailModal').style.display='none';" class="btn btn-outline btn-sm">Duplicate</button>
+        <button onclick="exportCampaignDetail(${idx});" class="btn btn-outline btn-sm">Export Summary</button>
+      </div>
+      <div>
+        <button onclick="document.getElementById('campaignDetailModal').style.display='none'" class="btn btn-secondary">Close</button>
+        <button onclick="saveDetailAndClose(${idx});" class="btn btn-primary">Save Changes</button>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+}
+
+// Helpers for detail modal
+function setDetailStatus(idx, newStatus) {
+  const camps = getCampaigns();
+  if (!camps[idx]) return;
+  camps[idx].status = newStatus;
+  setCampaigns(camps);
+  renderCampaigns();
+  showCampaignDetail(idx); // refresh
+}
+
+function updateCampaignField(idx, field, val) {
+  const camps = getCampaigns();
+  if (!camps[idx]) return;
+  if (['views','conversions'].includes(field)) {
+    camps[idx][field] = parseInt(val) || 0;
+  } else if (field === 'ctr') {
+    camps[idx][field] = parseFloat(val) || 0;
+  } else {
+    camps[idx][field] = val;
+  }
+  setCampaigns(camps);
+  // Do not re-render list immediately to avoid losing focus on inputs
+}
+
+function saveDetailAndClose(idx) {
+  // Force a sync of numeric fields in case onchange didn't fire
+  const camps = getCampaigns();
+  const v = document.getElementById('detailViews');
+  const ctr = document.getElementById('detailCtr');
+  const conv = document.getElementById('detailConv');
+  if (camps[idx] && v) camps[idx].views = parseInt(v.value) || 0;
+  if (camps[idx] && ctr) camps[idx].ctr = parseFloat(ctr.value) || 0;
+  if (camps[idx] && conv) camps[idx].conversions = parseInt(conv.value) || 0;
+  setCampaigns(camps);
+  renderCampaigns();
+  document.getElementById('campaignDetailModal').style.display = 'none';
+  showToast('Campaign details saved', 'success');
+}
+
+function removeAssetFromDetail(idx, assetIdx) {
+  const camps = getCampaigns();
+  if (!camps[idx] || !Array.isArray(camps[idx].assets)) return;
+  camps[idx].assets.splice(assetIdx, 1);
+  setCampaigns(camps);
+  renderCampaigns();
+  showCampaignDetail(idx); // refresh modal
+}
+
+function exportCampaignDetail(idx) {
+  const camps = getCampaigns();
+  const c = camps[idx];
+  if (!c) return;
+  const summary = `Campaign: ${c.name}\nID: ${c.id}\nMarket: ${c.market}\nStatus: ${c.status}\nBudget: ${c.budget || '—'}\nDates: ${c.startDate || '?'} → ${c.endDate || '?'}\nAssets: ${(c.assets||[]).length}\nBrief: ${c.prompt || ''}\nGoal: ${c.goal || ''}`;
+  navigator.clipboard.writeText(summary).then(() => {
+    showToast('Campaign summary copied to clipboard', 'success');
+  }).catch(() => {
+    alert(summary);
+  });
+}
+
+function duplicateCampaignFromIdx(idx) {
+  const camps = getCampaigns();
+  const c = camps[idx];
+  if (!c) return;
+  const copy = JSON.parse(JSON.stringify(c));
+  copy.id = 'GRV-' + Date.now().toString(36).toUpperCase();
+  copy.name = c.name + ' (Copy)';
+  copy.status = 'Draft';
+  copy.views = 0;
+  copy.ctr = 0;
+  copy.conversions = 0;
+  copy.assets = Array.isArray(c.assets) ? [...c.assets] : [];
+  copy.created = new Date().toISOString().split('T')[0];
+  camps.unshift(copy);
+  setCampaigns(camps);
+  renderCampaigns();
+  showToast(`Duplicated as ${copy.name}`, 'success');
 }
 
 // Seed some demo campaigns on first run if empty
@@ -3849,8 +4698,42 @@ function seedDemoCampaignsIfNeeded() {
   const camps = getCampaigns();
   if (camps.length === 0) {
     const demo = [
-      { id: 'GRV-DEMO1', name: 'Spain Premium Launch Q2', market: 'ES', status: 'Live', assets: 7, created: '2026-05-12', prompt: 'Premium metal card acquisition in Spain' },
-      { id: 'GRV-DEMO2', name: 'UK Ultra Summer Stories', market: 'UK', status: 'Approved', assets: 3, created: '2026-06-01', prompt: 'Ultra lifestyle vertical creatives' },
+      {
+        id: 'GRV-DEMO1',
+        name: 'Spain Premium Launch Q2',
+        market: 'ES',
+        status: 'Live',
+        assets: ['ES_Story_Premium.png', 'ES_Banner_Metal.jpg', 'ES_Video_15s.mp4'],
+        created: '2026-05-12',
+        prompt: 'Premium metal card acquisition drive. Focus on cashback + airport perks.',
+        startDate: '2026-05-20',
+        endDate: '2026-07-10',
+        budget: 62000,
+        channels: ['story','banner','video'],
+        audience: 'Spanish high-income 28-45',
+        goal: '+22% Premium signups',
+        views: 187400,
+        ctr: 4.1,
+        conversions: 1342
+      },
+      {
+        id: 'GRV-DEMO2',
+        name: 'UK Ultra Summer Stories',
+        market: 'UK',
+        status: 'Approved',
+        assets: ['UK_Story_Summer1.png', 'UK_Carousel_Ultra.png'],
+        created: '2026-06-01',
+        prompt: 'Ultra lifestyle vertical creatives for summer holidays push.',
+        startDate: '2026-06-15',
+        endDate: '2026-08-25',
+        budget: 38500,
+        channels: ['story','social'],
+        audience: 'UK urban professionals',
+        goal: 'Increase app engagement',
+        views: 94000,
+        ctr: 3.7,
+        conversions: 681
+      }
     ];
     setCampaigns(demo);
   }
@@ -3865,6 +4748,12 @@ switchTab = function(tab) {
   oldSwitch(tab);
   if (tab === 'campaigns') {
     setTimeout(() => renderCampaigns(), 30);
+  }
+  if (tab === 'target-markets') {
+    setTimeout(() => initTargetMarkets && initTargetMarkets(), 50);
+  }
+  if (tab === 'analytics') {
+    setTimeout(() => initAnalyticsTab && initAnalyticsTab(), 50);
   }
 };
 
@@ -3881,13 +4770,13 @@ function simulateABTest() {
   setTimeout(() => {
     const a = (4.1 + Math.random() * 1.8).toFixed(1);
     const b = (3.4 + Math.random() * 1.6).toFixed(1);
-    const winner = parseFloat(a) > parseFloat(b) ? 'A' : 'B';
+    abCurrentWinner = parseFloat(a) > parseFloat(b) ? 'A' : 'B';
     const lift = (Math.abs(parseFloat(a) - parseFloat(b)) / Math.min(parseFloat(a), parseFloat(b)) * 100).toFixed(0);
 
     log.innerHTML = `
       10k users simulated.<br>
       A: ${a}% &nbsp; | &nbsp; B: ${b}%<br>
-      <strong style="color:var(--accent-teal)">Winner: Version ${winner} (+${lift}%)</strong>
+      <strong style="color:var(--accent-teal)">Winner: Version ${abCurrentWinner} (+${lift}%)</strong>
     `;
 
     // Update live numbers
@@ -3896,22 +4785,120 @@ function simulateABTest() {
     if (aEl) aEl.textContent = a + '%';
     if (bEl) bEl.textContent = b + '%';
 
-    showToast(`🏆 Simulation complete — Version ${winner} wins by ${lift}%`, 'success');
+    // Update summary banner
+    const summary = document.getElementById('abWinnerSummary');
+    if (summary) summary.innerHTML = `<strong>Current Leader: Version ${abCurrentWinner}</strong> (+${lift}% lift)`;
+
+    showToast(`🏆 Simulation complete — Version ${abCurrentWinner} wins by ${lift}%`, 'success');
   }, 950);
 }
 
-function resetABSimulation() {
-  const log = document.getElementById('abSimLog');
-  const a = document.getElementById('predictedCtrA');
-  const b = document.getElementById('predictedCtrB');
-  if (log) log.textContent = 'Simulation reset. Ready.';
-  if (a) a.textContent = '4.8%';
-  if (b) b.textContent = '3.9%';
-  showToast('A/B simulation reset', 'info');
+// resetABSimulation and voteAB logic is handled by the definitions above (cleaned duplicates)
+
+
+function updateABVoteDisplays() {
+  if (typeof abVotes === 'undefined' || abVotes === null) {
+    abVotes = { A: { like: 0, dislike: 0 }, B: { like: 0, dislike: 0 } };
+  }
+  const aL = document.getElementById('abVotesALikes');
+  const aD = document.getElementById('abVotesADislikes');
+  const bL = document.getElementById('abVotesBLikes');
+  const bD = document.getElementById('abVotesBDislikes');
+  if (aL) aL.textContent = abVotes.A.like;
+  if (aD) aD.textContent = abVotes.A.dislike;
+  if (bL) bL.textContent = abVotes.B.like;
+  if (bD) bD.textContent = abVotes.B.dislike;
 }
 
-function voteAB(version, like) {
-  showToast(`${like ? '👍' : '👎'} Vote recorded for Version ${version}`, 'info');
+function loadVariantFromLibrary(side) {
+  const camps = getCampaigns();
+  if (!camps || camps.length === 0) {
+    showToast('No campaigns in library yet. Create some first!', 'warning');
+    return;
+  }
+  // Pick different ones for A vs B if possible
+  let idx = (side === 'A') ? 0 : Math.min(1, camps.length - 1);
+  const camp = camps[idx] || camps[0];
+  const text = `${camp.name}. ${camp.prompt || 'Premium benefits and seamless experience.'}`;
+  const taId = side === 'A' ? 'abTextA' : 'abTextB';
+  const ta = document.getElementById(taId);
+  if (ta) {
+    ta.value = text;
+  }
+  // Also optionally update the card title area if needed
+  showToast(`Loaded Variant ${side} from Campaign Library`, 'success');
+}
+
+function declareWinnerAndDeploy() {
+  if (!abCurrentWinner) {
+    // fallback: use votes if any, else CTRs
+    const aLikes = abVotes.A.like - abVotes.A.dislike;
+    const bLikes = abVotes.B.like - abVotes.B.dislike;
+    if (aLikes !== 0 || bLikes !== 0) {
+      abCurrentWinner = aLikes >= bLikes ? 'A' : 'B';
+    } else {
+      const aEl = document.getElementById('predictedCtrA');
+      const bEl = document.getElementById('predictedCtrB');
+      const aVal = aEl ? parseFloat(aEl.textContent) : 4.0;
+      const bVal = bEl ? parseFloat(bEl.textContent) : 3.5;
+      abCurrentWinner = aVal >= bVal ? 'A' : 'B';
+    }
+  }
+
+  const winnerSide = abCurrentWinner;
+  const taId = winnerSide === 'A' ? 'abTextA' : 'abTextB';
+  const ta = document.getElementById(taId);
+  const winnerText = ta ? ta.value : `Version ${winnerSide} Creative`;
+
+  // Create a real deployed campaign entry
+  const camps = getCampaigns();
+  const newCamp = {
+    id: 'GRV-AB-' + Date.now().toString(36).toUpperCase(),
+    name: `AB Winner: ${winnerText.substring(0, 50)}...`,
+    market: 'ES',
+    status: 'Live',
+    assets: [winnerText.substring(0, 30) + '.png'],
+    created: new Date().toISOString().split('T')[0],
+    prompt: `Deployed winner from A/B Test. Variant ${winnerSide}: ${winnerText}`,
+    views: Math.floor(Math.random() * 50000) + 20000,
+    ctr: parseFloat((4.2 + Math.random() * 1.5).toFixed(1)),
+    conversions: Math.floor(Math.random() * 1200) + 300
+  };
+  camps.unshift(newCamp);
+  setCampaigns(camps);
+  renderCampaigns();
+
+  // Update summary
+  const summary = document.getElementById('abWinnerSummary');
+  if (summary) summary.innerHTML = `<span style="color:#22c55e">✅ Deployed: Version ${winnerSide}</span>`;
+
+  // Add to past records dynamically (simple append)
+  const tbody = document.querySelector('#content-ab-test table tbody');
+  if (tbody) {
+    const row = document.createElement('tr');
+    row.style.borderBottom = '1px solid var(--border-default)';
+    row.innerHTML = `
+      <td class="text-sm font-mono" style="padding:8px;">AB-${Date.now().toString(36).toUpperCase().slice(-6)}</td>
+      <td class="text-sm" style="padding:8px;">${winnerText.substring(0,35)}...</td>
+      <td class="text-sm" style="padding:8px;">${winnerSide==='A' ? '4.8%' : '3.9%'}</td>
+      <td class="text-sm" style="padding:8px;">${winnerSide==='A' ? '3.9%' : '4.8%'}</td>
+      <td class="text-sm text-lime font-bold" style="padding:8px;">🥇 Version ${winnerSide}</td>
+      <td class="text-sm" style="padding:8px;"><span class="badge badge-green">Deployed</span></td>
+    `;
+    tbody.prepend(row);
+  }
+
+  showToast(`Version ${winnerSide} declared winner & deployed as Live campaign.`, 'success');
+
+  // Clear for next test
+  setTimeout(() => {
+    showToast('Next: Monitor performance in Campaign Library tab.', 'info');
+  }, 1200);
+
+  // Switch user to see the result
+  setTimeout(() => {
+    switchTab('campaigns');
+  }, 1800);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3955,6 +4942,14 @@ function wireCreatorLivePreview() {
 
 // Wire it after DOM ready
 setTimeout(wireCreatorLivePreview, 650);
+
+// Initialize AB vote displays
+setTimeout(() => {
+  if (typeof updateABVoteDisplays === 'function') updateABVoteDisplays();
+  // ensure initial summary text
+  const sum = document.getElementById('abWinnerSummary');
+  if (sum && !abCurrentWinner) sum.textContent = 'Run simulation or vote to determine winner.';
+}, 900);
 
 // Export PNG removed (no real image generation in this prototype without APIs) 
 // function stubbed
